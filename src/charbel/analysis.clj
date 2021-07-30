@@ -22,6 +22,10 @@
 (defmacro module [& args]
   (apply module* args))
 
+(defmacro deffn [name & args]
+  (let [definition (list 'fn args)]
+    (list 'def name {:f definition :src (str definition)})))
+
 (comment
 
   (parse (+ 1 m))
