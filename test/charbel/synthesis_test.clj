@@ -15,7 +15,7 @@
           expected (str "module adder (\n   input wire clk,\n"
                         "   input wire[16-1:0] a,\n   input wire[16-1:0] b,\n"
                         "  output wire[16-1:0] c\n);\n"
-                        "\nlogic [16:0] dout;\n\n"
-                        "always @(posedge clk)\n dout <= a + b;\n\n"
-                        "assign c = dout[16:0];\n\n\nendmodule\n")]
+                        "\nlogic [17-1:0] dout;\n\n"
+                        "always @(posedge clk)\n dout <= (a + b);\n\n"
+                        "assign c = (dout[16:0]);\n\n\nendmodule\n")]
       (is (= result expected)))))

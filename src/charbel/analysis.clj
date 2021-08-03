@@ -5,9 +5,10 @@
     (or (seq? form) (vector? form))
     (let [f (first form)
           r (rest form)]
-      (if (vector? f)
-        (mapv parse* form)
-        (vec (cons (keyword f) (mapv parse* r)))))
+      (cond
+        (vector? f) (mapv parse* form)
+        (= f 'let) (mapv parse* (cons 'do (concat (map #(cons 'assign %) (partition 2 (first r))) (rest r))))
+        :else (vec (cons (keyword f) (mapv parse* r)))))
     (number? form)
     form
     (map? form) (parse* (vec form))
@@ -16,8 +17,11 @@
 (defmacro parse [form]
   (vec (parse* form)))
 
+(defn postprocess [forms]
+  (reduce (fn [acc elem] (if (= (first elem) :do) (vec (concat acc (rest elem))) (conj acc elem))) [] forms))
+
 (defn module* [name clocks ports & body]
-  {:name (keyword name) :clocks (parse* clocks) :ports (parse* ports) :body (mapv parse* body)})
+  {:name (keyword name) :clocks (parse* clocks) :ports (parse* ports) :body (postprocess (mapv parse* body))})
 
 (defmacro module [& args]
   (apply module* args))

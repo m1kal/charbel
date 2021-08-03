@@ -6,41 +6,75 @@
 
 (declare expression)
 
-(defn complex-expression
-  ([[a & b] env]
-   (condp = a
-     :select
-     {:result (str (:result (expression (first b) env))
-                   "["
-                   (second b)
-                   (if (= 2 (count b)) "]" (str ":" (last b) "]")))
-      :width  (if (= 2 (count b)) 1 (inc (- (second b) (last b))))}
-     :+
-     (let [[x y] b
-           e1 (expression x env) e2 (expression y env)]
-     {:result (str (:result e1) " + " (:result e2)) :width (max (:width e1) (:width e2))})
-     :bit-and
-     (let [[x y] b
-           e1 (expression x env) e2 (expression y env)]
-       {:result (str (:result e1) " & " (:result e2)) :width (max (:width e1) (:width e2))})
-     :if
-     (let [[x y z] b
-           e1 (expression x env) e2 (expression y env) e3 (expression z env)]
-       {:result (str (:result e1) " ? " (:result e2) " : " (:result e3))
-        :width (max (:width e2) (:width e3))})
-     {:result (str "unknown " a) :width 99})))
+(defmulti complex-expression (fn [expr env] (first expr)))
+
+(defmethod complex-expression :select [[a & b] env]
+  {:result (str (:result (expression (first b) env))
+                "[" (second b) (if (= 2 (count b)) "]" (str ":" (last b) "]")))
+   :width  (if (= 2 (count b)) 1 (inc (- (second b) (last b))))})
+
+(defmethod complex-expression :+ [[a x y & r] env]
+  (let [e1 (expression x env) e2 (expression y env)]
+    {:result (str (:result e1) " + " (:result e2)) :width (inc (max (:width e1) (:width e2)))}))
+
+(defmethod complex-expression :- [[a x y & r] env]
+  (let [e1 (expression x env) e2 (expression y env)]
+    {:result (str (:result e1) " - " (:result e2)) :width (max (:width e1) (:width e2))}))
+
+(defmethod complex-expression :* [[a x y & r] env]
+  (let [e1 (expression x env) e2 (expression y env)]
+    {:result (str (:result e1) " * " (:result e2)) :width (+ (:width e1) (:width e2))}))
+
+(defmethod complex-expression :inc [[a x & r] env]
+  (let [e1 (expression x env)]
+    {:result (str (:result e1) " + 1") :width (inc (:width e1))}))
+
+(defmethod complex-expression :dec [[a x & r] env]
+  (let [e1 (expression x env)]
+    {:result (str (:result e1) " - 1") :width (:width e1)}))
+
+(defmethod complex-expression :bit-and [[a x y & r] env]
+  (let [e1 (expression x env) e2 (expression y env)]
+    {:result (str (:result e1) " & " (:result e2)) :width (max (:width e1) (:width e2))}))
+
+(defmethod complex-expression :bit-or [[a x y & r] env]
+  (let [e1 (expression x env) e2 (expression y env)]
+    {:result (str (:result e1) " | " (:result e2)) :width (max (:width e1) (:width e2))}))
+
+(defmethod complex-expression :bit-xor [[a x y & r] env]
+  (let [e1 (expression x env) e2 (expression y env)]
+    {:result (str (:result e1) " ^ " (:result e2)) :width (max (:width e1) (:width e2))}))
+
+(defmethod complex-expression :if [[a x y z & r] env]
+  (let [e1 (expression x env) e2 (expression y env) e3 (expression z env)]
+    {:result (str (:result e1) " ? " (:result e2) " : " (:result e3))
+     :width  (max (:width e2) (:width e3))}))
+
+(defmethod complex-expression := [[a x y & r] env]
+  (let [e1 (expression x env) e2 (expression y env)]
+    {:result (str (:result e1) " == " (:result e2)) :width 1}))
+
+(defmethod complex-expression :mod [[a x y & r] env]
+  (let [e1 (expression x env) e2 (expression y env)]
+    {:result (str (:result e1) " % " (:result e2)) :width (:width e2)}))
+
+(defmethod complex-expression :width [[a w x & r] env]
+  (let [e1 (expression w env) e2 (expression x env)]
+    {:result (str (:result e2)) :width (:result e1)}))
+
+(defmethod complex-expression :default [form env]
+  {:result (str "unnkown " (first form)) :width 32})
 
 (defn expression
   ([x] (expression x {}))
   ([form env]
    (cond
-     (number? form) {:result form :width (inc (int (Math/floor (/ (Math/log form) (Math/log 2)))))}
+     (number? form) {:result form :width (inc (int (Math/floor (/ (Math/log (max form 1)) (Math/log 2)))))}
      (keyword? form) {:result (str (from-intermediate form)) :width (or (env form) 32)}
-     (or (vector? form) (seq? form)) (complex-expression form env)
-     :else {:result "unknown" :width "unknown"}
-     )
-  ))
-
+     (or (vector? form) (seq? form))
+     (let [e (complex-expression form env)]
+       {:result (str "(" (:result e) ")") :width (:width e)})
+     :else {:result "unknown" :width "unknown"})))
 
 (defn build-clocks [clocks]
   (let [hm (apply hash-map (flatten clocks))
@@ -68,7 +102,7 @@
         widths (map #(:width (expression (last %) env)) forms-to-evaluate)
         signal-widths (zipmap undeclared-signals widths)]
     (clojure.string/join "\n"
-                         (map #(str "logic [" (last %) ":0] " (symbol (first %)) ";") signal-widths))))
+                         (map #(str "logic [" (last %) "-1:0] " (symbol (first %)) ";") signal-widths))))
 
 (defn build-element [element clocks]
   (condp = (first element)
@@ -106,5 +140,5 @@
                           [:assign :unused [:+ 3 17]]
                           [:assign :c [:select :dout 16 0]]]}]
     (build example))
-  
+
   )
