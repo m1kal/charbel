@@ -4,27 +4,43 @@
 (defn from-intermediate [value]
   (if (keyword? value) (symbol value) (if (number? value) value "-unknown-type-")))
 
-(defn expression
-  ([x] (expression x {}))
+(declare expression)
+
+(defn complex-expression
   ([[a & b] env]
    (condp = a
      :select
-     {:result (str (symbol (first b))
+     {:result (str (:result (expression (first b) env))
                    "["
                    (second b)
                    (if (= 2 (count b)) "]" (str ":" (last b) "]")))
       :width  (if (= 2 (count b)) 1 (inc (- (second b) (last b))))}
      :+
-     {:result (str (from-intermediate (first b)) " + " (from-intermediate (second b)))
-      :width  (let [[x y] b
-                    wa (if (number? x)
-                         (inc (int (Math/floor (/ (Math/log x) (Math/log 2)))))
-                         (or (env x) 32))
-                    wb (if (number? x)
-                         (inc (int (Math/floor (/ (Math/log y) (Math/log 2)))))
-                         (or (env y) 32))]
-                (max wa wb))}
-     {:result (str "unknown " a) :width 32})))
+     (let [[x y] b
+           e1 (expression x env) e2 (expression y env)]
+     {:result (str (:result e1) " + " (:result e2)) :width (max (:width e1) (:width e2))})
+     :bit-and
+     (let [[x y] b
+           e1 (expression x env) e2 (expression y env)]
+       {:result (str (:result e1) " & " (:result e2)) :width (max (:width e1) (:width e2))})
+     :if
+     (let [[x y z] b
+           e1 (expression x env) e2 (expression y env) e3 (expression z env)]
+       {:result (str (:result e1) " ? " (:result e2) " : " (:result e3))
+        :width (max (:width e2) (:width e3))})
+     {:result (str "unknown " a) :width 99})))
+
+(defn expression
+  ([x] (expression x {}))
+  ([form env]
+   (cond
+     (number? form) {:result form :width (inc (int (Math/floor (/ (Math/log form) (Math/log 2)))))}
+     (keyword? form) {:result (str (from-intermediate form)) :width (or (env form) 32)}
+     (or (vector? form) (seq? form)) (complex-expression form env)
+     :else {:result "unknown" :width "unknown"}
+     )
+  ))
+
 
 (defn build-clocks [clocks]
   (let [hm (apply hash-map (flatten clocks))
@@ -90,5 +106,5 @@
                           [:assign :unused [:+ 3 17]]
                           [:assign :c [:select :dout 16 0]]]}]
     (build example))
-
+  
   )
