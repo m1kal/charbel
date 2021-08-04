@@ -18,7 +18,7 @@
   (clojure.string/join ",\n" (map port ports)))
 
 (defn declare-signals [clocks ports body]
-  (let [output-forms (map second body)
+  (let [output-forms (map second (filter #(some (fn [x] (= (first %) x)) [:register :assign :cond*] ) body))
         clock-signals (map second clocks)
         port-signals (map second ports)
         undeclared-signals
@@ -51,7 +51,14 @@
       " " (symbol (second element)) " <= " (:result (apply expression (drop 2 element))) ";\n")
     :assign
     (str "assign " (symbol (second element)) " = " (:result (apply expression (drop 2 element))) ";\n")
-    (str "unknown " (str element))))
+    :array
+    (str "logic [" (nth element 2) "-1:0][" (nth element 3) "-1:0] "  (symbol (second element)) ";\n")
+    :set-if (str "always @(posedge " (symbol (:clk clocks)) ")\n if ("
+                 (:result (expression (nth element 1))) ") \n  "
+                 (symbol (nth element 2)) "[" (:result (expression (nth element 3)))
+                 "] <= " (:result (expression (nth element 4))) ";\n")
+    (str "unknown " (str element))
+    ))
 
 (defn build-body [body clocks]
   (clojure.string/join "\n" (map #(build-element % clocks) body)))
@@ -77,5 +84,15 @@
                           [:cond* :if_else_register [:= :x 1] 35 [:= :x 2] 36 37]
                           [:assign :c [:select :dout 16 0]]]}]
     (build example))
+
+  (let [example {:name   :lookup,
+                 :clocks [[:clk :clk]],
+                 :ports  [[:in :we 1] [:in :din 32] [:in :wa 9] [:in :ra 9] [:out :res 32]],
+                 :body   [[:array :mem 512 32]
+                          [:register :q [:get :mem :ra]]
+                          [:assign :res :q]
+                          [:set-if [:= :we 1] :mem :wa :din]]}]
+    (build example))
+
 
   )

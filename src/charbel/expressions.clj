@@ -61,6 +61,10 @@
   (let [e1 (expression w env) e2 (expression x env)]
     {:result (str (:result e2)) :width (:result e1)}))
 
+(defmethod complex-expression :get [[a mem addr & r] env]
+  (let [e (expression addr env)]
+    {:result (str (symbol mem) "[" (:result e) "]") :width 128}))
+
 (defmethod complex-expression :default [form env]
   {:result (str "unnkown " (first form)) :width 32})
 
