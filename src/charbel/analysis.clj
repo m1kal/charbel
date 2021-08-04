@@ -20,8 +20,14 @@
 (defn postprocess [forms]
   (reduce (fn [acc elem] (if (= (first elem) :do) (vec (concat acc (rest elem))) (conj acc elem))) [] forms))
 
-(defn module* [name clocks ports & body]
-  {:name (keyword name) :clocks (parse* clocks) :ports (parse* ports) :body (postprocess (mapv parse* body))})
+(defn module* [name & args]
+  (let [[clocks ports body] (if (map? (first args))
+                              [(first args) (second args) (drop 2 args)]
+                              [{:clk 'clk :reset 'reset} (first args) (rest args)])]
+    {:name   (keyword name)
+     :clocks (parse* clocks)
+     :ports  (parse* ports)
+     :body   (postprocess (mapv parse* body))}))
 
 (defmacro module [& args]
   (apply module* args))
@@ -38,6 +44,10 @@
   (parse (let [x (width 4 (+ a b))] (inc x)))
 
   (module adder {:clk clk :reset reset} [[:in a 16] [:in b 16] [:out c 16]]
+          (register dout (+ a b))
+          (assign c (select dout 16 0)))
+
+  (module adder [[:in a 16] [:in b 16] [:out c 16]]
           (register dout (+ a b))
           (assign c (select dout 16 0)))
 
