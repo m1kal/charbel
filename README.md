@@ -4,13 +4,65 @@ Write synthesizable FPGA code with Clojure syntax.
 
 ## Usage
 
-...
+Create an intermediate representation from Clojure expression:
 
+    (def adder-module (module adder
+            [[:in a 16] [:in b 16] [:out c 16]]
+            (register dout (+ a b))
+            (assign c (select dout 16 0)))
+
+Create Verilog code:
+
+    (build adder-module)
+
+Functions to create and assign signals:
+* register name expression
+* assign name expression
+
+Supported expressions:
+(+ a b), (* a b), (if a b c), (select a position),
+(inc a), (dec a), (bit-and a b), (bit-xor a b),
+(bit-or a b), (= a b), (width w a), (mod a b)
+
+Clocks and resets can be declared explicitly as the first
+argument to `module`. If the argument is not provided,
+clock is called "clk", synchronous reset is called "reset".
 
 ## Examples
 
-...
+    (build
+      (module lookup
+              {:clk clk}
+              [[:in datain 32] [:in we 1], [:in address 32] [:out dataout 32]]
+              (array mem 32 32)
+              (set-if (= we 1) mem address datain)
+              (register q (get mem address))
+              (assign dataout q)))
 
+results in the following SystemVerilog code:
+
+    module lookup (
+        input wire clk,
+        input wire[32-1:0] datain,
+        input wire[1-1:0] we,
+        input wire[32-1:0] address,
+       output wire[32-1:0] dataout
+    );
+    
+    logic [128-1:0] q;
+    
+    logic [32-1:0][32-1:0] mem;
+    
+    always @(posedge clk)
+     if ((we == 1))
+      mem[address] <= datain;
+    
+    always @(posedge clk)
+     q <= (mem[address]);
+    
+    assign dataout = q;
+
+    endmodule
 
 ## License
 
