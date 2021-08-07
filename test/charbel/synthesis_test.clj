@@ -30,59 +30,19 @@
 
 (deftest add-multiply
   (testing "Create a simple module"
-    (let [input "(module add_multiply [[:in a 18] [:in b 18] [:in c 36] [:out result 36] [:out overflow 1]]
-                        (register axb (* a b))
-                        (assign sum (width 37 (+ c axb)))
-                        (register overflow_d1 (select sum 36))
-                        (register sum_d1 (select sum 35 0))
-                        (assign result sum_d1)
-                        (assign overflow overflow_d1))"
+    (let [input (slurp "test-resources/add_multiply.clj")
           intermediate-form (module-from-string input)
           result (build intermediate-form)
-          expected "module add_multiply (
-   input wire clk,
-   input wire reset,
-   input wire [18-1:0] a,
-   input wire [18-1:0] b,
-   input wire [36-1:0] c,
-  output wire [36-1:0] result,
-  output wire [1-1:0] overflow
-);
+          expected (slurp "test-resources/add_multiply.sv")]
+      (is (= expected result)))))
 
-logic [36-1:0] axb;
-logic [37-1:0] sum;
-logic [1-1:0] overflow_d1;
-logic [36-1:0] sum_d1;
-
-always @(posedge clk)
-if (reset)
- axb <= 0;
-else
- axb <= (a * b);
-
-assign sum = ((c + axb));
-
-always @(posedge clk)
-if (reset)
- overflow_d1 <= 0;
-else
- overflow_d1 <= (sum[36]);
-
-always @(posedge clk)
-if (reset)
- sum_d1 <= 0;
-else
- sum_d1 <= (sum[35:0]);
-
-assign result = sum_d1;
-
-assign overflow = overflow_d1;
-
-
-endmodule
-"]
-      (is (= expected result))
-          )))
+(deftest edge-detector
+  (testing "Create an edge detector"
+    (let [input (slurp "test-resources/edge_detector.clj")
+          intermediate-form (module-from-string input)
+          result (build intermediate-form)
+          expected (slurp "test-resources/edge_detector.sv")]
+      (is (= expected result)))))
 
 
 (deftest expression-test
@@ -104,7 +64,7 @@ endmodule
     (is (= (expression [:inc :a] {:a 6}) {:result "(a + 1)" :width 7}))
     (is (= (expression [:dec :a] {:a 6}) {:result "(a - 1)" :width 6}))
     (is (= (expression [:bit-and 0xff 0xff00]) {:result "(255 & 65280)" :width 16}))
-    (is (= (expression [:bit-or 0xff 0xff00]) {:result  "(255 | 65280)" :width 16}))
+    (is (= (expression [:bit-or 0xff 0xff00]) {:result "(255 | 65280)" :width 16}))
     (is (= (expression [:bit-xor 0xff 0xff00]) {:result "(255 ^ 65280)" :width 16}))
     (is (= (expression [:if [:= 1 2] [:* :a :b] [:+ :a :b]] {:a 12 :b 12})
            {:result "((1 == 2) ? (a * b) : (a + b))" :width 24}))
