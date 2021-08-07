@@ -11,7 +11,7 @@
       (if reset (str "   input wire " (symbol reset) ",\n") ""))))
 
 (defn port [[dir name width]]
-  (str "  " (if (= dir :in) " input wire" "output wire")
+  (str "  " (if (= dir :in) " input wire " "output wire ")
        "[" width "-1:0] " (symbol name)))
 
 (defn build-ports [ports]
@@ -46,7 +46,7 @@
     (str
       "always @(posedge " (symbol (:clk clocks)) ")\n"
       (if (:reset clocks)
-        (str "if (" (symbol (:reset clocks)) ")\n " (symbol (second element)) " <= 0;\nelse \n")
+        (str "if (" (symbol (:reset clocks)) ")\n " (symbol (second element)) " <= 0;\nelse\n")
         "")
       " " (symbol (second element)) " <= " (:result (apply expression (drop 2 element))) ";\n")
     :assign

@@ -4,6 +4,13 @@
             [charbel.expressions :refer :all]
             [charbel.synthesis :refer :all]))
 
+(deftest empty-module
+  (testing "Create an empty module"
+    (let [result
+          (build (module empty []))
+          expected (str "module empty (\n   input wire clk,\n   input wire reset,\n\n);"
+                        "\n\n\n\n\n\nendmodule\n")]
+      (is (= result expected)))))
 
 (deftest simple-module
   (testing "Create a basic module"
@@ -14,12 +21,69 @@
                          (register dout (+ a b))
                          (assign c (select dout 16 0))))
           expected (str "module adder (\n   input wire clk,\n"
-                        "   input wire[16-1:0] a,\n   input wire[16-1:0] b,\n"
-                        "  output wire[16-1:0] c\n);\n"
+                        "   input wire [16-1:0] a,\n   input wire [16-1:0] b,\n"
+                        "  output wire [16-1:0] c\n);\n"
                         "\nlogic [17-1:0] dout;\n\n"
                         "always @(posedge clk)\n dout <= (a + b);\n\n"
                         "assign c = (dout[16:0]);\n\n\nendmodule\n")]
       (is (= result expected)))))
+
+(deftest add-multiply
+  (testing "Create a simple module"
+    (let [input "(module add_multiply [[:in a 18] [:in b 18] [:in c 36] [:out result 36] [:out overflow 1]]
+                        (register axb (* a b))
+                        (assign sum (width 37 (+ c axb)))
+                        (register overflow_d1 (select sum 36))
+                        (register sum_d1 (select sum 35 0))
+                        (assign result sum_d1)
+                        (assign overflow overflow_d1))"
+          intermediate-form (module-from-string input)
+          result (build intermediate-form)
+          expected "module add_multiply (
+   input wire clk,
+   input wire reset,
+   input wire [18-1:0] a,
+   input wire [18-1:0] b,
+   input wire [36-1:0] c,
+  output wire [36-1:0] result,
+  output wire [1-1:0] overflow
+);
+
+logic [36-1:0] axb;
+logic [37-1:0] sum;
+logic [1-1:0] overflow_d1;
+logic [36-1:0] sum_d1;
+
+always @(posedge clk)
+if (reset)
+ axb <= 0;
+else
+ axb <= (a * b);
+
+assign sum = ((c + axb));
+
+always @(posedge clk)
+if (reset)
+ overflow_d1 <= 0;
+else
+ overflow_d1 <= (sum[36]);
+
+always @(posedge clk)
+if (reset)
+ sum_d1 <= 0;
+else
+ sum_d1 <= (sum[35:0]);
+
+assign result = sum_d1;
+
+assign overflow = overflow_d1;
+
+
+endmodule
+"]
+      (is (= expected result))
+          )))
+
 
 (deftest expression-test
   (testing "Building expressions"

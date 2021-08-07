@@ -6,6 +6,7 @@
     (let [f (first form)
           r (rest form)]
       (cond
+        (nil? f) []
         (vector? f) (mapv parse* form)
         (= f 'let) (mapv parse* (cons 'do (concat (map #(cons 'assign %) (partition 2 (first r))) (rest r))))
         :else (vec (cons (keyword f) (mapv parse* r)))))
@@ -35,6 +36,10 @@
 (defmacro deffn [name & args]
   (let [definition (list 'fn args)]
     (list 'def name {:f definition :src (str definition)})))
+
+(defn module-from-string [input]
+  (let [[command & args ] (read-string input)]
+    (if (= 'module command) (apply module* args) "Error: not a module")))
 
 (comment
 
