@@ -64,6 +64,12 @@ results in the following SystemVerilog code:
 
     endmodule
 
+See `test-resources` directory for more examples.
+
+## Contact
+
+If you want to contribute, request features, discuss or comment the project, send an e-mail to [charbel-support@protonmail.com](mailto:charbel-support@protonmail.com).
+
 ## License
 
 Copyright (c) 2001 Michał Kahl
