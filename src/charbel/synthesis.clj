@@ -57,6 +57,10 @@
                  (:result (expression (nth element 1))) ") \n  "
                  (symbol (nth element 2)) "[" (:result (expression (nth element 3)))
                  "] <= " (:result (expression (nth element 4))) ";\n")
+    :instance
+    (str (symbol (second element)) " " (symbol (nth element 2)) "(\n"
+         (clojure.string/join ",\n" (map (fn [[k,v]] (str " ." (symbol k) "(" (symbol v) ")")) (nth element 3)))
+         "\n);\n\n")
     (str "unknown " (str element))
     ))
 
