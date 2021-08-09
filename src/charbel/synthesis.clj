@@ -18,14 +18,14 @@
   (clojure.string/join ",\n" (map port ports)))
 
 (defn declare-signals [clocks ports body]
-  (let [output-forms (map second (filter #(some (fn [x] (= (first %) x)) [:register :assign :cond*] ) body))
+  (let [output-forms (map second (filter #(some (fn [x] (= (first %) x)) [:register :assign :cond* :declare] ) body))
         clock-signals (map second clocks)
         port-signals (map second ports)
         undeclared-signals
         (remove (set (concat clock-signals port-signals)) output-forms)
         forms-to-evaluate (map (fn [form] (first (filter #(= form (second %)) body))) undeclared-signals)
         env (apply hash-map (mapcat rest ports))
-        widths (map #(:width (expression (last %) env)) forms-to-evaluate)
+        widths (map #(:width (expression (if (= (first %) :declare) (dec (bit-shift-left 1 (last %))) (last %)) env)) forms-to-evaluate)
         signal-widths (zipmap undeclared-signals widths)]
     (clojure.string/join "\n"
                          (map #(str "logic [" (last %) "-1:0] " (symbol (first %)) ";") signal-widths))))
@@ -61,6 +61,7 @@
     (str (symbol (second element)) " " (symbol (nth element 2)) "(\n"
          (clojure.string/join ",\n" (map (fn [[k,v]] (str " ." (symbol k) "(" (symbol v) ")")) (nth element 3)))
          "\n);\n\n")
+    :declare ""
     (str "unknown " (str element))
     ))
 
