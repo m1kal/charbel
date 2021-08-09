@@ -44,6 +44,14 @@
           expected (slurp "test-resources/edge_detector.sv")]
       (is (= expected result)))))
 
+(deftest fsm
+  (testing "Create a state machine"
+    (let [input (slurp "test-resources/fsm.clj")
+          intermediate-form (module-from-string input)
+          result (build intermediate-form)
+          expected (slurp "test-resources/fsm.sv")]
+      (is (= expected result)))))
+
 
 (deftest expression-test
   (testing "Building expressions"
