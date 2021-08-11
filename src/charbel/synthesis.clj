@@ -18,7 +18,7 @@
   (clojure.string/join ",\n" (map port ports)))
 
 (defn declare-signals [clocks ports body]
-  (let [output-forms (map second (filter #(some (fn [x] (= (first %) x)) [:register :assign :cond* :declare] ) body))
+  (let [output-forms (map second (filter #(some (fn [x] (= (first %) x)) [:register :assign :cond* :declare]) body))
         clock-signals (map second clocks)
         port-signals (map second ports)
         undeclared-signals
@@ -30,41 +30,50 @@
     (clojure.string/join "\n"
                          (map #(str "logic [" (last %) "-1:0] " (symbol (first %)) ";") signal-widths))))
 
-(defn build-element [element clocks]
-  (condp = (first element)
-    :cond*
-    (str
-      "always @(*)\n"
-      (clojure.string/join "\n else"
-                           (map
-                             (fn [[c v]] (str " if " (:result (expression c)) "\n  "
-                                              (symbol (second element)) " = " (:result (expression v))))
-                             (partition 2 (drop 2 element))))
-      (if (= 1 (mod (count element) 2)) (str "\n else\n " (symbol (second element)) " = " (:result (expression (last element)))) "")
-      "\n")
-    :register
-    (str
-      (if (or (not (:init (apply expression (drop 2 element)))) (:reset clocks)) "" (str "initial " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\n"))
-      "always @(posedge " (symbol (:clk clocks)) ")\n"
-      (if (:reset clocks)
-        (str "if (" (symbol (:reset clocks)) ")\n " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\nelse\n")
-        "")
-      " " (symbol (second element)) " <= " (:result (apply expression (drop 2 element))) ";\n")
-    :assign
-    (str "assign " (symbol (second element)) " = " (:result (apply expression (drop 2 element))) ";\n")
-    :array
-    (str "logic [" (nth element 2) "-1:0][" (nth element 3) "-1:0] "  (symbol (second element)) ";\n")
-    :set-if (str "always @(posedge " (symbol (:clk clocks)) ")\n if ("
-                 (:result (expression (nth element 1))) ") \n  "
-                 (symbol (nth element 2)) "[" (:result (expression (nth element 3)))
-                 "] <= " (:result (expression (nth element 4))) ";\n")
-    :instance
-    (str (symbol (second element)) " " (symbol (nth element 2)) "(\n"
-         (clojure.string/join ",\n" (map (fn [[k,v]] (str " ." (symbol k) "(" (symbol v) ")")) (nth element 3)))
-         "\n);\n\n")
-    :declare ""
-    (str "unknown " (str element))
-    ))
+(defmulti build-element (fn [element clocks] (first element)))
+
+(defmethod build-element :cond* [element clocks]
+  (str
+    "always @(*)\n"
+    (clojure.string/join "\n else"
+                         (map
+                           (fn [[c v]] (str " if " (:result (expression c)) "\n  "
+                                            (symbol (second element)) " = " (:result (expression v))))
+                           (partition 2 (drop 2 element))))
+    (if (= 1 (mod (count element) 2)) (str "\n else\n " (symbol (second element)) " = " (:result (expression (last element)))) "")
+    "\n"))
+
+(defmethod build-element :register [element clocks]
+  (str
+    (if (or (not (:init (apply expression (drop 2 element)))) (:reset clocks)) "" (str "initial " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\n"))
+    "always @(posedge " (symbol (:clk clocks)) ")\n"
+    (if (:reset clocks)
+      (str "if (" (symbol (:reset clocks)) ")\n " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\nelse\n")
+      "")
+    " " (symbol (second element)) " <= " (:result (apply expression (drop 2 element))) ";\n"))
+
+(defmethod build-element :assign [element clocks]
+  (str "assign " (symbol (second element)) " = " (:result (apply expression (drop 2 element))) ";\n"))
+
+(defmethod build-element :array [element clocks]
+  (str "logic [" (nth element 2) "-1:0][" (nth element 3) "-1:0] " (symbol (second element)) ";\n"))
+
+(defmethod build-element :set-if [element clocks]
+  (str "always @(posedge " (symbol (:clk clocks)) ")\n if ("
+       (:result (expression (nth element 1))) ") \n  "
+       (symbol (nth element 2)) "[" (:result (expression (nth element 3)))
+       "] <= " (:result (expression (nth element 4))) ";\n"))
+
+(defmethod build-element :instance [element clocks]
+  (str (symbol (second element)) " " (symbol (nth element 2)) "(\n"
+       (clojure.string/join ",\n" (map (fn [[k, v]] (str " ." (symbol k) "(" (symbol v) ")")) (nth element 3)))
+       "\n);\n\n"))
+
+(defmethod build-element :declare [element clocks]
+  "")
+
+(defmethod build-element :default [element clocks]
+  (str "unknown " (str element)))
 
 (defn build-body [body clocks]
   (clojure.string/join "\n" (map #(build-element % clocks) body)))
@@ -99,6 +108,5 @@
                           [:assign :res :q]
                           [:set-if [:= :we 1] :mem :wa :din]]}]
     (build example))
-
 
   )

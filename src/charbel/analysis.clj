@@ -1,17 +1,18 @@
 (ns charbel.analysis)
 
+(declare parse*)
+
+(defn parse-seq [[f & r :as form]]
+  (cond
+    (nil? f) []
+    (vector? f) (mapv parse* form)
+    (= f 'let) (mapv parse* (cons 'do (concat (map #(cons 'assign %) (partition 2 (first r))) (rest r))))
+    :else (vec (cons (keyword f) (mapv parse* r)))))
+
 (defn parse* [form]
   (cond
-    (or (seq? form) (vector? form))
-    (let [f (first form)
-          r (rest form)]
-      (cond
-        (nil? f) []
-        (vector? f) (mapv parse* form)
-        (= f 'let) (mapv parse* (cons 'do (concat (map #(cons 'assign %) (partition 2 (first r))) (rest r))))
-        :else (vec (cons (keyword f) (mapv parse* r)))))
-    (number? form)
-    form
+    (or (seq? form) (vector? form)) (parse-seq form)
+    (number? form) form
     (map? form) (parse* (vec form))
     :else (keyword form)))
 
@@ -38,7 +39,7 @@
     (list 'def name {:f definition :src (str definition)})))
 
 (defn module-from-string [input]
-  (let [[command & args ] (read-string input)]
+  (let [[command & args] (read-string input)]
     (if (= 'module command) (apply module* args) "Error: not a module")))
 
 (comment
