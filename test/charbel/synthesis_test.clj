@@ -74,6 +74,7 @@
     (is (= (expression [:bit-and 0xff 0xff00]) {:result "(255 & 65280)" :width 16}))
     (is (= (expression [:bit-or 0xff 0xff00]) {:result "(255 | 65280)" :width 16}))
     (is (= (expression [:bit-xor 0xff 0xff00]) {:result "(255 ^ 65280)" :width 16}))
+    (is (= (expression [:bit-not 0xaaa]) {:result "(~2730)" :width 12}))
     (is (= (expression [:if [:= 1 2] [:* :a :b] [:+ :a :b]] {:a 12 :b 12})
            {:result "((1 == 2) ? (a * b) : (a + b))" :width 24}))
     (is (= (expression [:= 1 2]) {:result "(1 == 2)" :width 1}))

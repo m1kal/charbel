@@ -9,8 +9,9 @@ logic [4-1:0] state;
 logic [32-1:0] result;
 logic [26-1:0] accum;
 
+initial state <= 0;
 always @(posedge clk)
- state <= (((1 == signal) ? ((state + 1) % 3) : state));
+ state <= ((((1 == signal) ? ((state + 1) % 3) : state)));
 
 always @(*)
  if (state == 0)

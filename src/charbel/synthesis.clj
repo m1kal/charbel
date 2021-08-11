@@ -44,9 +44,10 @@
       "\n")
     :register
     (str
+      (if (or (not (:init (apply expression (drop 2 element)))) (:reset clocks)) "" (str "initial " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\n"))
       "always @(posedge " (symbol (:clk clocks)) ")\n"
       (if (:reset clocks)
-        (str "if (" (symbol (:reset clocks)) ")\n " (symbol (second element)) " <= 0;\nelse\n")
+        (str "if (" (symbol (:reset clocks)) ")\n " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\nelse\n")
         "")
       " " (symbol (second element)) " <= " (:result (apply expression (drop 2 element))) ";\n")
     :assign

@@ -44,6 +44,10 @@
   (let [e1 (expression x env) e2 (expression y env)]
     {:result (str (:result e1) " ^ " (:result e2)) :width (max (:width e1) (:width e2))}))
 
+(defmethod complex-expression :bit-not [[a x & r] env]
+  (let [e1 (expression x env)]
+    {:result (str "~" (:result e1)) :width (:width e1)}))
+
 (defmethod complex-expression :if [[a x y z & r] env]
   (let [e1 (expression x env) e2 (expression y env) e3 (expression z env)]
     {:result (str (:result e1) " ? " (:result e2) " : " (:result e3))
@@ -59,14 +63,17 @@
 
 (defmethod complex-expression :width [[a w x & r] env]
   (let [e1 (expression w env) e2 (expression x env)]
-    {:result (str (:result e2)) :width (:result e1)}))
+    (assoc e2 :width (:result e1))))
+
+(defmethod complex-expression :init [[a iv x] env]
+  (assoc (expression x env) :init iv))
 
 (defmethod complex-expression :get [[a mem addr & r] env]
   (let [e (expression addr env)]
     {:result (str (symbol mem) "[" (:result e) "]") :width 128}))
 
 (defmethod complex-expression :default [form env]
-  {:result (str "unnkown " (first form)) :width 32})
+  {:result (str "unknown " (first form)) :width 32})
 
 (defn expression
   ([x] (expression x {}))
@@ -76,5 +83,5 @@
      (keyword? form) {:result (str (from-intermediate form)) :width (or (env form) 32)}
      (or (vector? form) (seq? form))
      (let [e (complex-expression form env)]
-       {:result (str "(" (:result e) ")") :width (:width e)})
+       (assoc e :result (str "(" (:result e) ")")))
      :else {:result "unknown" :width "unknown"})))

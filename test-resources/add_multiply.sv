@@ -15,7 +15,7 @@ logic [36-1:0] sum_d1;
 
 always @(posedge clk)
 if (reset)
- axb <= 0;
+ axb <= '0;
 else
  axb <= (a * b);
 
@@ -23,13 +23,13 @@ assign sum = ((c + axb));
 
 always @(posedge clk)
 if (reset)
- overflow_d1 <= 0;
+ overflow_d1 <= '0;
 else
  overflow_d1 <= (sum[36]);
 
 always @(posedge clk)
 if (reset)
- sum_d1 <= 0;
+ sum_d1 <= '0;
 else
  sum_d1 <= (sum[35:0]);
 
