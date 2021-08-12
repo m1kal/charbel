@@ -13,7 +13,7 @@
   (cond
     (or (seq? form) (vector? form)) (parse-seq form)
     (number? form) form
-    (map? form) (parse* (vec form))
+    (map? form) (apply hash-map (parse* (apply concat (vec form))))
     :else (keyword form)))
 
 (defmacro parse [form]
@@ -23,11 +23,11 @@
   (reduce (fn [acc elem] (if (= (first elem) :do) (vec (concat acc (rest elem))) (conj acc elem))) [] forms))
 
 (defn module* [name & args]
-  (let [[clocks ports body] (if (map? (first args))
+  (let [[config ports body] (if (map? (first args))
                               [(first args) (second args) (drop 2 args)]
-                              [{:clk 'clk :reset 'reset} (first args) (rest args)])]
+                              [{:clocks [['clk 'reset]]} (first args) (rest args)])]
     {:name   (keyword name)
-     :clocks (parse* clocks)
+     :config (parse* config)
      :ports  (parse* ports)
      :body   (postprocess (mapv parse* body))}))
 
@@ -49,7 +49,9 @@
   (parse (let [x ^{:width 4} (+ a b)] (inc x)))
   (parse (let [x (width 4 (+ a b))] (inc x)))
 
-  (module adder {:clk clk :reset reset} [[:in a 16] [:in b 16] [:out c 16]]
+  (module adder
+          {:clocks [[c r] [c2 r2 :async] [c3]] :clock master_clock :params [WIDTH 3]}
+          [[:in a 16] [:in b 16] [:out c 16]]
           (register dout (+ a b))
           (assign c (select dout 16 0)))
 

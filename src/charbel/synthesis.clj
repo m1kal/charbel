@@ -2,27 +2,22 @@
   (:require [charbel.analysis :refer :all]
             [charbel.expressions :refer :all]))
 
-(defn build-clocks [clocks]
-  (let [hm (apply hash-map (flatten clocks))
-        clk (:clk hm)
-        reset (:reset hm)]
-    (str
-      (if clk (str "   input wire " (symbol clk) ",\n") "")
-      (if reset (str "   input wire " (symbol reset) ",\n") ""))))
+(defn build-clock-inputs [clocks]
+  (clojure.string/join
+    (map #(str "   input wire " (symbol %) ",\n")
+         (mapcat #(->> % (take 2) (filter identity)) clocks))))
 
 (defn port [[dir name width]]
-  (str "  " (if (= dir :in) " input wire " "output wire ")
-       "[" width "-1:0] " (symbol name)))
+  (str "  " (if (= dir :in) " input" "output") " wire [" width "-1:0] " (symbol name)))
 
 (defn build-ports [ports]
   (clojure.string/join ",\n" (map port ports)))
 
 (defn declare-signals [clocks ports body]
   (let [output-forms (map second (filter #(some (fn [x] (= (first %) x)) [:register :assign :cond* :declare]) body))
-        clock-signals (map second clocks)
         port-signals (map second ports)
         undeclared-signals
-        (remove (set (concat clock-signals port-signals)) output-forms)
+        (remove (set (concat clocks port-signals)) output-forms)
         forms-to-evaluate (map (fn [form] (first (filter #(= form (second %)) body))) undeclared-signals)
         env (apply hash-map (mapcat rest ports))
         widths (map #(:width (expression (if (= (first %) :declare) (dec (bit-shift-left 1 (last %))) (last %)) env)) forms-to-evaluate)
@@ -76,23 +71,22 @@
   (str "unknown " (str element)))
 
 (defn build-body [body clocks]
-  (clojure.string/join "\n" (map #(build-element % clocks) body)))
+  (clojure.string/join "\n" (map #(build-element % (zipmap [:clk :reset] (first clocks))) body)))
 
-(defn build [{:keys [name clocks ports body]}]
+(defn build [{:keys [name config ports body]}]
   (str "module " (symbol name) " (\n"
-       (build-clocks clocks)
+       (build-clock-inputs (:clocks config))
        (build-ports ports)
        "\n);\n\n"
-       (declare-signals clocks ports body)
+       (declare-signals (flatten (:clocks config)) ports body)
        "\n\n"
-       (build-body body (apply hash-map (flatten clocks)))
+       (build-body body (:clocks config))
        "\n\nendmodule\n"))
-
 
 (comment
 
   (let [example {:name   :adder,
-                 :clocks [[:clk :clk] [:reset :reset]],
+                 :config {:clocks [[:clk :reset]]},
                  :ports  [[:in :a 16] [:in :b 16] [:out :c 16]],
                  :body   [[:register :dout [:+ :a :b]]
                           [:assign :unused [:+ 3 17]]
@@ -101,7 +95,7 @@
     (build example))
 
   (let [example {:name   :lookup,
-                 :clocks [[:clk :clk]],
+                 :config {:clocks [[:clk]]},
                  :ports  [[:in :we 1] [:in :din 32] [:in :wa 9] [:in :ra 9] [:out :res 32]],
                  :body   [[:array :mem 512 32]
                           [:register :q [:get :mem :ra]]

@@ -32,7 +32,7 @@ clock is called "clk", synchronous reset is called "reset".
 
     (build
       (module lookup
-              {:clk clk}
+              {:clocks [[clk]]}
               [[:in datain 32] [:in we 1], [:in address 32] [:out dataout 32]]
               (array mem 32 32)
               (set-if (= we 1) mem address datain)
@@ -69,6 +69,12 @@ See `test-resources` directory for more examples.
 ## Contact
 
 If you want to contribute, request features, discuss or comment the project, send an e-mail to [charbel-support@protonmail.com](mailto:charbel-support@protonmail.com).
+
+# Contributing
+
+So far this has been one-person project. If you have an idea to improve the project, feel free to fork it.
+
+However, pull requests might be rejected. If you have an improvement idea and want your changes to be merged, please contact me first (or create an issue).
 
 ## License
 

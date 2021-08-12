@@ -16,7 +16,7 @@
   (testing "Create a basic module"
     (let [result
           (build (module adder
-                         {:clk clk}
+                         {:clocks [[clk]]}
                          [[:in a 16] [:in b 16] [:out c 16]]
                          (register dout (+ a b))
                          (assign c (select dout 16 0))))
