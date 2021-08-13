@@ -33,10 +33,22 @@
     (clojure.string/join "\n else"
                          (map
                            (fn [[c v]] (str " if " (:result (expression c)) "\n  "
-                                            (symbol (second element)) " = " (:result (expression v))))
+                                            (symbol (second element)) " = " (:result (expression v)) ";"))
                            (partition 2 (drop 2 element))))
-    (if (= 1 (mod (count element) 2)) (str "\n else\n " (symbol (second element)) " = " (:result (expression (last element)))) "")
+    (if (= 1 (mod (count element) 2)) (str "\n else\n " (symbol (second element)) " = " (:result (expression (last element))) ";") "")
     "\n"))
+
+(defmethod build-element :case [element clocks]
+  (str
+    "always @(*)\ncase (" (symbol (nth element 2)) ")\n"
+    (clojure.string/join "\n"
+                         (map
+                           (fn [[c v]] (str " " (:result (expression c)) ":  "
+                                            (symbol (second element)) " = " (:result (expression v)) ";"))
+                           (partition 2 (drop 3 element))))
+    (if (= 0 (mod (count element) 2)) (str "\n default: " (symbol (second element)) " = " (:result (expression (last element))) ";") "")
+    "\nendcase\n"))
+
 
 (defmethod build-element :register [element clocks]
   (str

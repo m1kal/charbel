@@ -15,11 +15,11 @@ always @(posedge clk)
 
 always @(*)
  if (state == 0)
-  result = 0
+  result = 0;
  else if (state == 1)
-  result = (accum + input)
+  result = (accum + input);
  else if (state == 2)
-  result = input
+  result = input;
 
 always @(posedge clk)
  accum <= (result);
