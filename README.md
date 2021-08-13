@@ -1,6 +1,7 @@
 # Charbel
 
 Write synthesizable FPGA code with Clojure syntax.
+SystemVerilog code is generated.
 
 ## Usage
 
@@ -64,6 +65,37 @@ results in the following SystemVerilog code:
 
     endmodule
 
+Create a parametrized counter:
+
+    (module counter
+      {:parameters [WIDTH 16] :clocks [[clk_a]]}
+      [[:in start 1] [:in stop 1] [:in limit WIDTH] [:in en 1] [:out value WIDTH]]
+      (assign done (= cnt (dec limit)))
+      (register started
+                (init 0
+                  (width 1
+                    (if (= start 1)
+                        1
+                        (if stop 0 started)))))
+      (register cnt
+                (width WIDTH
+                (if (= started 0)
+                    0
+                    (if (= en 1)
+                        (if done 0 (inc cnt))
+                        cnt))))
+      (assign value cnt))
+
+Create a state machine:
+
+    (module fsm
+      {:clocks [[clk]]}
+      [[:in next 1] [:in signal 16] [:out signal_out 16]]
+      (register state (init 0 (width 4 (if (= 1 signal) (mod (inc state) 3) state))))
+      (cond* result (= state 0) 0 (= state 1) (+ accum input) (= state 2) input)
+      (register accum (width 26 result))
+      (assign signal_out (select accum 15 0)))
+
 See `test-resources` directory for more examples.
 
 ## Contact
@@ -78,7 +110,7 @@ However, pull requests might be rejected. If you have an improvement idea and wa
 
 ## License
 
-Copyright (c) 2001 Michał Kahl
+Copyright (c) 2021 Michał Kahl
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

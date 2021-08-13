@@ -96,7 +96,9 @@
 (defn build-body [body clocks]
   (clojure.string/join "\n" (map #(build-element % (zipmap [:clk :reset] (first clocks))) body)))
 
-(defn build [{:keys [name config ports body]}]
+(defn build
+  "Generate SystemVerilog code based on the output of module function."
+  [{:keys [name config ports body]}]
   (str "module " (symbol name)
        (if (:parameters config) (build-parameter-list (:parameters config)))
        " (\n"
@@ -107,25 +109,3 @@
        "\n\n"
        (build-body body (:clocks config))
        "\n\nendmodule\n"))
-
-(comment
-
-  (let [example {:name   :adder,
-                 :config {:clocks [[:clk :reset]]},
-                 :ports  [[:in :a 16] [:in :b 16] [:out :c 16]],
-                 :body   [[:register :dout [:+ :a :b]]
-                          [:assign :unused [:+ 3 17]]
-                          [:cond* :if_else_register [:= :x 1] 35 [:= :x 2] 36 37]
-                          [:assign :c [:select :dout 16 0]]]}]
-    (build example))
-
-  (let [example {:name   :lookup,
-                 :config {:clocks [[:clk]]},
-                 :ports  [[:in :we 1] [:in :din 32] [:in :wa 9] [:in :ra 9] [:out :res 32]],
-                 :body   [[:array :mem 512 32]
-                          [:register :q [:get :mem :ra]]
-                          [:assign :res :q]
-                          [:set-if [:= :we 1] :mem :wa :din]]}]
-    (build example))
-
-  )
