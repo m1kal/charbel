@@ -44,7 +44,7 @@ results in the following SystemVerilog code:
     module lookup (
         input wire clk,
         input wire[32-1:0] datain,
-        input wire[1-1:0] we,
+        input wire we,
         input wire[32-1:0] address,
        output wire[32-1:0] dataout
     );

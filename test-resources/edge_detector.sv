@@ -1,11 +1,11 @@
 module edge_detector (
    input wire clk,
-   input wire [1-1:0] data,
-  output wire [1-1:0] rising
+   input wire  data,
+  output wire  rising
 );
 
-logic [1-1:0] data_d1;
-logic [1-1:0] data_d2;
+logic  data_d1;
+logic  data_d2;
 
 always @(posedge clk)
  data_d1 <= data;

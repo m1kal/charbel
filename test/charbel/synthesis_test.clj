@@ -52,6 +52,13 @@
           expected (slurp "test-resources/fsm.sv")]
       (is (= expected result)))))
 
+(deftest counter
+  (testing "Create a parametrized counter"
+    (let [input (slurp "test-resources/counter.clj")
+          intermediate-form (module-from-string input)
+          result (build intermediate-form)
+          expected (slurp "test-resources/counter.sv")]
+      (is (= expected result)))))
 
 (deftest expression-test
   (testing "Building expressions"

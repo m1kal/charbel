@@ -1,6 +1,6 @@
 module fsm (
    input wire clk,
-   input wire [1-1:0] next,
+   input wire  next,
    input wire [16-1:0] signal,
   output wire [16-1:0] signal_out
 );

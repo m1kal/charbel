@@ -2,13 +2,24 @@
   (:require [charbel.analysis :refer :all]
             [charbel.expressions :refer :all]))
 
+(defn signal-width [width]
+  (if (= width 1) "" (str "[" (from-intermediate width) "-1:0]")))
+
+(defn build-parameter-list [parameters]
+  (str " #(\n  "
+       (clojure.string/join ",\n  "
+                            (map (fn [[k v]]
+                                   (str "parameter " (symbol k) " = " (from-intermediate v)))
+                                 (partition 2 parameters)))
+       "\n ) "))
+
 (defn build-clock-inputs [clocks]
   (clojure.string/join
     (map #(str "   input wire " (symbol %) ",\n")
          (mapcat #(->> % (take 2) (filter identity)) clocks))))
 
 (defn port [[dir name width]]
-  (str "  " (if (= dir :in) " input" "output") " wire [" width "-1:0] " (symbol name)))
+  (str "  " (if (= dir :in) " input" "output") " wire " (signal-width width) " " (symbol name)))
 
 (defn build-ports [ports]
   (clojure.string/join ",\n" (map port ports)))
@@ -23,7 +34,7 @@
         widths (map #(:width (expression (if (= (first %) :declare) (dec (bit-shift-left 1 (last %))) (last %)) env)) forms-to-evaluate)
         signal-widths (zipmap undeclared-signals widths)]
     (clojure.string/join "\n"
-                         (map #(str "logic [" (last %) "-1:0] " (symbol (first %)) ";") signal-widths))))
+                         (map #(str "logic " (signal-width (last %)) " " (symbol (first %)) ";") signal-widths))))
 
 (defmulti build-element (fn [element clocks] (first element)))
 
@@ -50,12 +61,12 @@
     "\nendcase\n"))
 
 
-(defmethod build-element :register [element clocks]
+(defmethod build-element :register [element clock]
   (str
-    (if (or (not (:init (apply expression (drop 2 element)))) (:reset clocks)) "" (str "initial " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\n"))
-    "always @(posedge " (symbol (:clk clocks)) ")\n"
-    (if (:reset clocks)
-      (str "if (" (symbol (:reset clocks)) ")\n " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\nelse\n")
+    (if (or (not (:init (apply expression (drop 2 element)))) (:reset clock)) "" (str "initial " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\n"))
+    "always @(posedge " (symbol (:clk clock)) ")\n"
+    (if (:reset clock)
+      (str "if (" (symbol (:reset clock)) ")\n " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\nelse\n")
       "")
     " " (symbol (second element)) " <= " (:result (apply expression (drop 2 element))) ";\n"))
 
@@ -63,10 +74,10 @@
   (str "assign " (symbol (second element)) " = " (:result (apply expression (drop 2 element))) ";\n"))
 
 (defmethod build-element :array [element clocks]
-  (str "logic [" (nth element 2) "-1:0][" (nth element 3) "-1:0] " (symbol (second element)) ";\n"))
+  (str "logic " (signal-width (nth element 2)) (signal-width (nth element 3)) " " (symbol (second element)) ";\n"))
 
-(defmethod build-element :set-if [element clocks]
-  (str "always @(posedge " (symbol (:clk clocks)) ")\n if ("
+(defmethod build-element :set-if [element clock]
+  (str "always @(posedge " (symbol (:clk clock)) ")\n if ("
        (:result (expression (nth element 1))) ") \n  "
        (symbol (nth element 2)) "[" (:result (expression (nth element 3)))
        "] <= " (:result (expression (nth element 4))) ";\n"))
@@ -86,7 +97,9 @@
   (clojure.string/join "\n" (map #(build-element % (zipmap [:clk :reset] (first clocks))) body)))
 
 (defn build [{:keys [name config ports body]}]
-  (str "module " (symbol name) " (\n"
+  (str "module " (symbol name)
+       (if (:parameters config) (build-parameter-list (:parameters config)))
+       " (\n"
        (build-clock-inputs (:clocks config))
        (build-ports ports)
        "\n);\n\n"

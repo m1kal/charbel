@@ -1,7 +1,7 @@
 (ns charbel.expressions)
 
 (defn from-intermediate [value]
-  (if (keyword? value) (symbol value) (if (number? value) value "-unknown-type-")))
+  (if (keyword? value) (symbol value) (if (or (string? value) (number? value)) value "-unknown-type-")))
 
 (declare expression)
 

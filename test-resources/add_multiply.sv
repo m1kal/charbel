@@ -5,12 +5,12 @@ module add_multiply (
    input wire [18-1:0] b,
    input wire [36-1:0] c,
   output wire [36-1:0] result,
-  output wire [1-1:0] overflow
+  output wire  overflow
 );
 
 logic [36-1:0] axb;
 logic [37-1:0] sum;
-logic [1-1:0] overflow_d1;
+logic  overflow_d1;
 logic [36-1:0] sum_d1;
 
 always @(posedge clk)
