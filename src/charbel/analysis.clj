@@ -31,11 +31,3 @@
      :ports  (parse* ports)
      :body   (postprocess (mapv parse* body))}))
 
-(defmacro module
-  "Create intermediate representation from input. See README for syntax and examples."
-  [& args]
-  (apply module* args))
-
-(defn module-from-string [input]
-  (let [[command & args] (read-string input)]
-    (if (= 'module command) (apply module* args) "Error: not a module")))

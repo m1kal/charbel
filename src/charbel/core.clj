@@ -1,6 +1,20 @@
 (ns charbel.core
-  (:require [charbel.analysis :refer :all]
-            [charbel.synthesis :refer :all]))
+  (:require [charbel.analysis :as a]
+            [charbel.synthesis :as s]))
+
+(defmacro module
+  "Create intermediate representation from input. See README for syntax and examples."
+  [& args]
+  (apply a/module* args))
+
+(defn module-from-string [input]
+  (let [[command & args] (read-string input)]
+    (if (= 'module command) (apply a/module* args) "Error: not a module")))
+
+(defn build
+  "Generate SystemVerilog code based on the output of module function."
+  [input]
+  (s/build input))
 
 (comment
 

@@ -5,12 +5,29 @@ SystemVerilog code is generated.
 
 ## Usage
 
+Add dependency in project.clj:
+
+[![Clojars Project](https://img.shields.io/clojars/v/com.github.m1kal/charbel.svg)](https://clojars.org/com.github.m1kal/charbel)
+
+Require the library:
+
+    (:require [charbel.core :refer :all])
+
 Create an intermediate representation from Clojure expression:
 
-    (def adder-module (module adder
-            [[:in a 16] [:in b 16] [:out c 16]]
-            (register dout (+ a b))
-            (assign c (select dout 16 0)))
+    (def adder-module
+      (module adder
+        [[:in a 16] [:in b 16] [:out c 16]]
+        (register dout (+ a b))
+        (assign c (select dout 16 0)))
+
+Or use input string:
+
+    (def adder-module
+      (module-from-string
+        "(module sum
+                 [[:in a 4] [:in b 4] [:out c 4]]
+                 (assign c (+ a b)))"))
 
 Create Verilog code:
 
