@@ -1,4 +1,5 @@
 (ns charbel.core
+  #?(:cljs (:require-macros [charbel.core]))
   (:require [charbel.analysis :as a]
             [charbel.synthesis :as s]))
 
