@@ -1,6 +1,5 @@
 (ns charbel.synthesis
-  (:require [charbel.analysis :refer :all]
-            [charbel.expressions :refer :all]))
+  (:require [charbel.expressions :refer [expression from-intermediate]]))
 
 (defn signal-width [width]
   (if (= width 1) "" (str "[" (from-intermediate width) "-1:0]")))
