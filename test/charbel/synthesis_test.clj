@@ -29,6 +29,18 @@
                         "assign c = (dout[16:0]);\n\n\nendmodule\n")]
       (is (= result expected)))))
 
+(deftest port-detection
+  (testing "Create an empty module"
+    (let [result
+          (build (module strange [[j 12] [:in k 1] [:out l WIDTH] [:unknown m 4] [:in n 4 5]]))
+          expected (str "module strange (\n   input wire clk,\n   input wire reset,\n"
+                        "   input wire [12-1:0] j,\n   input wire  k,\n  output wire [WIDTH-1:0] l,\n"
+                        "  output wire [4-1:0] m,\n   input wire [-1-1:0] invalid_port"
+                        "\n);"
+                        "\n\n\n\n\n\nendmodule\n")]
+      (is (= result expected)))))
+
+
 (deftest add-multiply
   (testing "Create a simple module"
     (let [input (slurp "test-resources/add_multiply.clj")

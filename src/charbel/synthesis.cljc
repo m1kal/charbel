@@ -18,11 +18,17 @@
     (map #(str "   input wire " (symbol %) ",\n")
          (mapcat #(->> % (take 2) (filter identity)) clocks))))
 
+(defn detect-port [input]
+  (condp = (count input)
+    2 (cons :in input)
+    3 input
+    [:in :invalid_port -1]))
+
 (defn port [[dir name width]]
   (str "  " (if (= dir :in) " input" "output") " wire " (signal-width width) " " (symbol name)))
 
 (defn build-ports [ports]
-  (s/join ",\n" (map port ports)))
+  (s/join ",\n" (map (comp port detect-port) ports)))
 
 (defn declare-signals [clocks ports body]
   (let [output-forms (map second (filter #(some (fn [x] (= (first %) x)) [:register :assign :cond* :declare]) body))
