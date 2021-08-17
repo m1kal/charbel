@@ -1,4 +1,5 @@
-(ns charbel.expressions)
+(ns charbel.expressions
+  (:require [clojure.string :as s]))
 
 (defn from-intermediate [value]
   (if (keyword? value) (symbol value) (if (or (string? value) (number? value)) value "-unknown-type-")))
@@ -14,15 +15,15 @@
 
 (defmethod complex-expression :+ [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (clojure.string/join " + " (map :result e)) :width (inc (apply max (map :width e)))}))
+    {:result (s/join " + " (map :result e)) :width (inc (apply max (map :width e)))}))
 
 (defmethod complex-expression :- [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (clojure.string/join " - " (map :result e)) :width (apply max (map :width e))}))
+    {:result (s/join " - " (map :result e)) :width (apply max (map :width e))}))
 
 (defmethod complex-expression :* [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (clojure.string/join " * " (map :result e)) :width (apply + (map :width e))}))
+    {:result (s/join " * " (map :result e)) :width (apply + (map :width e))}))
 
 (defmethod complex-expression :inc [[_ x] env]
   (let [e1 (expression x env)]
@@ -34,15 +35,15 @@
 
 (defmethod complex-expression :bit-and [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (clojure.string/join " & " (map :result e)) :width (apply max (map :width e))}))
+    {:result (s/join " & " (map :result e)) :width (apply max (map :width e))}))
 
 (defmethod complex-expression :bit-or [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (clojure.string/join " | " (map :result e)) :width (apply max (map :width e))}))
+    {:result (s/join " | " (map :result e)) :width (apply max (map :width e))}))
 
 (defmethod complex-expression :bit-xor [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (clojure.string/join " ^ " (map :result e)) :width (apply max (map :width e))}))
+    {:result (s/join " ^ " (map :result e)) :width (apply max (map :width e))}))
 
 (defmethod complex-expression :bit-not [[_ x] env]
   (let [e1 (expression x env)]

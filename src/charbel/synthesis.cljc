@@ -1,19 +1,20 @@
 (ns charbel.synthesis
-  (:require [charbel.expressions :refer [expression from-intermediate]]))
+  (:require [charbel.expressions :refer [expression from-intermediate]]
+            [clojure.string :as s]))
 
 (defn signal-width [width]
   (if (= width 1) "" (str "[" (from-intermediate width) "-1:0]")))
 
 (defn build-parameter-list [parameters]
   (str " #(\n  "
-       (clojure.string/join ",\n  "
+       (s/join ",\n  "
                             (map (fn [[k v]]
                                    (str "parameter " (symbol k) " = " (from-intermediate v)))
                                  (partition 2 parameters)))
        "\n ) "))
 
 (defn build-clock-inputs [clocks]
-  (clojure.string/join
+  (s/join
     (map #(str "   input wire " (symbol %) ",\n")
          (mapcat #(->> % (take 2) (filter identity)) clocks))))
 
@@ -21,7 +22,7 @@
   (str "  " (if (= dir :in) " input" "output") " wire " (signal-width width) " " (symbol name)))
 
 (defn build-ports [ports]
-  (clojure.string/join ",\n" (map port ports)))
+  (s/join ",\n" (map port ports)))
 
 (defn declare-signals [clocks ports body]
   (let [output-forms (map second (filter #(some (fn [x] (= (first %) x)) [:register :assign :cond* :declare]) body))
@@ -32,7 +33,7 @@
         env (apply hash-map (mapcat rest ports))
         widths (map #(:width (expression (if (= (first %) :declare) (dec (bit-shift-left 1 (last %))) (last %)) env)) forms-to-evaluate)
         signal-widths (zipmap undeclared-signals widths)]
-    (clojure.string/join "\n"
+    (s/join "\n"
                          (map #(str "logic " (signal-width (last %)) " " (symbol (first %)) ";") signal-widths))))
 
 (defmulti build-element (fn [element clocks] (first element)))
@@ -40,7 +41,7 @@
 (defmethod build-element :cond* [element clocks]
   (str
     "always @(*)\n"
-    (clojure.string/join "\n else"
+    (s/join "\n else"
                          (map
                            (fn [[c v]] (str " if " (:result (expression c)) "\n  "
                                             (symbol (second element)) " = " (:result (expression v)) ";"))
@@ -51,7 +52,7 @@
 (defmethod build-element :case [element clocks]
   (str
     "always @(*)\ncase (" (symbol (nth element 2)) ")\n"
-    (clojure.string/join "\n"
+    (s/join "\n"
                          (map
                            (fn [[c v]] (str " " (:result (expression c)) ":  "
                                             (symbol (second element)) " = " (:result (expression v)) ";"))
@@ -83,7 +84,7 @@
 
 (defmethod build-element :instance [element clocks]
   (str (symbol (second element)) " " (symbol (nth element 2)) "(\n"
-       (clojure.string/join ",\n" (map (fn [[k, v]] (str " ." (symbol k) "(" (symbol v) ")")) (nth element 3)))
+       (s/join ",\n" (map (fn [[k, v]] (str " ." (symbol k) "(" (symbol v) ")")) (nth element 3)))
        "\n);\n\n"))
 
 (defmethod build-element :declare [element clocks]
@@ -93,7 +94,7 @@
   (str "unknown " (str element)))
 
 (defn build-body [body clocks]
-  (clojure.string/join "\n" (map #(build-element % (zipmap [:clk :reset] (first clocks))) body)))
+  (s/join "\n" (map #(build-element % (zipmap [:clk :reset] (first clocks))) body)))
 
 (defn build
   "Generate SystemVerilog code based on the output of module function."

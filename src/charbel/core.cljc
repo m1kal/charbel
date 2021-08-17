@@ -1,7 +1,8 @@
 (ns charbel.core
   #?(:cljs (:require-macros [charbel.core]))
   (:require [charbel.analysis :as a]
-            [charbel.synthesis :as s]))
+            [charbel.synthesis :as s]
+            #?(:cljs [cljs.reader :refer [read-string]])))
 
 (defmacro module
   "Create intermediate representation from input. See README for syntax and examples."
