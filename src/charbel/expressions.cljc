@@ -13,6 +13,10 @@
                 "[" (second b) (if (= 2 (count b)) "]" (str ":" (last b) "]")))
    :width  (if (= 2 (count b)) 1 (inc (- (second b) (last b))))})
 
+(defmethod complex-expression :vector [[_ & r] env]
+  (let [e (map #(expression % env) r)]
+    {:result (str "{" (s/join ", " (map :result e)) "}") :width (apply + (map :width e))}))
+
 (defmethod complex-expression :+ [[_ & r] env]
   (let [e (map #(expression % env) r)]
     {:result (s/join " + " (map :result e)) :width (inc (apply max (map :width e)))}))
@@ -63,7 +67,10 @@
     {:result (str (:result e1) " % " (:result e2)) :width (:width e2)}))
 
 (defmethod complex-expression :width [[_ w x] env]
-  (let [e1 (expression w env) e2 (expression x env)]
+  (let [e1 (expression w env) e2 (expression x env)
+        e2 (if (and (number? (:result e1)) (number? (:result e2)))
+               (assoc e2 :result (str (:result e1) "'d" (:result e2)))
+               e2)]
     (assoc e2 :width (:result e1))))
 
 (defmethod complex-expression :init [[_ iv x] env]

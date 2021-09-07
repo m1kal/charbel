@@ -99,7 +99,10 @@
            {:result "((1 == 2) ? (a * b) : (a + b))" :width 24}))
     (is (= (expression [:= 1 2]) {:result "(1 == 2)" :width 1}))
     (is (= (expression [:mod 32 5]) {:result "(32 % 5)" :width 3}))
-    (is (= (expression [:width 21 0xcafecafe]) {:result "(3405695742)" :width 21}))
+    (is (= (expression [:width 21 0xcafecafe]) {:result "(21'd3405695742)" :width 21}))
     (is (= (expression [:get :memory 321]) {:result "(memory[321])" :width 128}))
+    (is (= (expression [:vector 0 :a :b] {:a 10 :b 4}) {:result "({0, a, b})" :width 15}))
+    (is (= (expression [:width 20 [:vector 0 :a :b]] {:a 10 :b 4}) {:result "(({0, a, b}))" :width 20}))
+    (is (= (expression [:vector :a [:width 1 0] :b] {:a 10 :b 4}) {:result "({a, (1'd0), b})" :width 15}))
 
     ))

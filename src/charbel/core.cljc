@@ -9,7 +9,9 @@
   [& args]
   (apply a/module* args))
 
-(defn module-from-string [input]
+(defn module-from-string
+  "Create intermediate representation from input string. See README for syntax and examples."
+  [input]
   (let [[command & args] (read-string input)]
     (if (= 'module command) (apply a/module* args) "Error: not a module")))
 
