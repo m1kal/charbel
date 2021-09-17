@@ -24,7 +24,7 @@
 
 (defn module* [name & args]
   (let [[config ports body] (if (map? (first args))
-                              [(first args) (second args) (drop 2 args)]
+                              [(into {:clocks [['clk 'reset]]} (first args)) (second args) (drop 2 args)]
                               [{:clocks [['clk 'reset]]} (first args) (rest args)])]
     {:name   (keyword name)
      :config (parse* config)

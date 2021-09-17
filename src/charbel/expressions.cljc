@@ -7,7 +7,13 @@
 (defn max-width [args]
   (if (every? number? args)
     (apply max args)
-    (reduce (fn [acc elem] (str "`max(" acc ", " elem ")")) args)))
+    (reduce (fn [acc elem] (str "`max(" acc ", " elem ")"))
+            (map (comp str from-intermediate) args))))
+
+(defn width-sum [args]
+  (if (every? number? args)
+    (apply + args)
+    (s/join " + " (map (comp str from-intermediate) args))))
 
 (declare expression)
 
@@ -20,11 +26,11 @@
 
 (defmethod complex-expression :vector [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (str "{" (s/join ", " (map :result e)) "}") :width (apply + (map :width e))}))
+    {:result (str "{" (s/join ", " (map :result e)) "}") :width (width-sum (map :width e))}))
 
 (defmethod complex-expression :+ [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (s/join " + " (map :result e)) :width (inc (max-width (map :width e)))}))
+    {:result (s/join " + " (map :result e)) :width (width-sum [(max-width (map :width e)) 1])}))
 
 (defmethod complex-expression :- [[_ & r] env]
   (let [e (map #(expression % env) r)]
@@ -32,11 +38,11 @@
 
 (defmethod complex-expression :* [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (s/join " * " (map :result e)) :width (apply + (map :width e))}))
+    {:result (s/join " * " (map :result e)) :width (width-sum (map :width e))}))
 
 (defmethod complex-expression :inc [[_ x] env]
   (let [e1 (expression x env)]
-    {:result (str (:result e1) " + 1") :width (inc (:width e1))}))
+    {:result (str (:result e1) " + 1") :width (width-sum [1 (:width e1)])}))
 
 (defmethod complex-expression :dec [[_ x] env]
   (let [e1 (expression x env)]

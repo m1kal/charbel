@@ -65,6 +65,13 @@
           expected (slurp "test-resources/fsm.sv")]
       (is (= expected result)))))
 
+(deftest parametrized-adder
+  (testing "Create a parametrized adder"
+    (let [input (slurp "test-resources/parametrized_adder.clj")
+          intermediate-form (module-from-string input)
+          result (build intermediate-form)
+          expected (slurp "test-resources/parametrized_adder.sv")]
+      (is (= expected result)))))
 (deftest counter
   (testing "Create a parametrized counter"
     (let [input (slurp "test-resources/counter.clj")
@@ -104,5 +111,6 @@
     (is (= (expression [:vector 0 :a :b] {:a 10 :b 4}) {:result "({0, a, b})" :width 15}))
     (is (= (expression [:width 20 [:vector 0 :a :b]] {:a 10 :b 4}) {:result "(({0, a, b}))" :width 20}))
     (is (= (expression [:vector :a [:width 1 0] :b] {:a 10 :b 4}) {:result "({a, (1'd0), b})" :width 15}))
+    (is (= (expression [:+ :a :b] {:a 4 :b :WIDTH}) {:result "(a + b)" :width "`max(4, WIDTH) + 1"}))
 
     ))
