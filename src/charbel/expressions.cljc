@@ -4,6 +4,11 @@
 (defn from-intermediate [value]
   (if (keyword? value) (symbol value) (if (or (string? value) (number? value)) value "-unknown-type-")))
 
+(defn max-width [args]
+  (if (every? number? args)
+    (apply max args)
+    (reduce (fn [acc elem] (str "`max(" acc ", " elem ")")) args)))
+
 (declare expression)
 
 (defmulti complex-expression (fn [expr _] (first expr)))
@@ -19,11 +24,11 @@
 
 (defmethod complex-expression :+ [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (s/join " + " (map :result e)) :width (inc (apply max (map :width e)))}))
+    {:result (s/join " + " (map :result e)) :width (inc (max-width (map :width e)))}))
 
 (defmethod complex-expression :- [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (s/join " - " (map :result e)) :width (apply max (map :width e))}))
+    {:result (s/join " - " (map :result e)) :width (max-width (map :width e))}))
 
 (defmethod complex-expression :* [[_ & r] env]
   (let [e (map #(expression % env) r)]
@@ -39,15 +44,15 @@
 
 (defmethod complex-expression :bit-and [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (s/join " & " (map :result e)) :width (apply max (map :width e))}))
+    {:result (s/join " & " (map :result e)) :width (max-width (map :width e))}))
 
 (defmethod complex-expression :bit-or [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (s/join " | " (map :result e)) :width (apply max (map :width e))}))
+    {:result (s/join " | " (map :result e)) :width (max-width (map :width e))}))
 
 (defmethod complex-expression :bit-xor [[_ & r] env]
   (let [e (map #(expression % env) r)]
-    {:result (s/join " ^ " (map :result e)) :width (apply max (map :width e))}))
+    {:result (s/join " ^ " (map :result e)) :width (max-width (map :width e))}))
 
 (defmethod complex-expression :bit-not [[_ x] env]
   (let [e1 (expression x env)]
@@ -70,8 +75,9 @@
   (let [e1 (expression w env) e2 (expression x env)
         e2 (if (and (number? (:result e1)) (number? (:result e2)))
                (assoc e2 :result (str (:result e1) "'d" (:result e2)))
-               e2)]
-    (assoc e2 :width (:result e1))))
+               e2)
+        width (if (string? w) w (:result e1))]
+    (assoc e2 :width width)))
 
 (defmethod complex-expression :init [[_ iv x] env]
   (assoc (expression x env) :init iv))
