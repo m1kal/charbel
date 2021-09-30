@@ -92,6 +92,14 @@
   (let [e (expression addr env)]
     {:result (str (symbol mem) "[" (:result e) "]") :width 128}))
 
+(defmethod complex-expression :cond [[_ cond expr & args] env]
+  (let [e (expression expr env)]
+    (if (empty? args)
+      e
+      (let [r (expression (cons :cond args) env)]
+        {:result (str (:result (expression cond env)) " ? " (:result e) " : " (:result r))
+         :width  (max-width [(:width e) (:width r)])}))))
+
 (defmethod complex-expression :default [form _]
   {:result (str "unknown " (first form)) :width 32})
 

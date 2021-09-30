@@ -102,8 +102,7 @@
 (defn build-body [body clocks]
   (s/join "\n" (map #(build-element % (zipmap [:clk :reset] (first clocks))) body)))
 
-(defn build
-  "Generate SystemVerilog code based on the output of module function."
+(defn build-module
   [{:keys [name config ports body]}]
   (str "module " (symbol name)
        (if (:parameters config) (build-parameter-list (:parameters config)))
@@ -115,3 +114,41 @@
        "\n\n"
        (build-body body (:clocks config))
        "\n\nendmodule\n"))
+
+(defn generate-elems [input]
+  (condp = (first input)
+    :pipeline
+    (let [[_ data num] input]
+      (mapcat (fn [value] (let [name (symbol value)]
+                         [[:register (str name "_d")
+                         [:width (str num "-1:0][$bits(" name ")") [:vector (keyword (str name "_d")) value]]]
+                         [:assign (str name "_d" num) [:width (str "$bits(" name ")") [:select (keyword (str name "_d")) (dec num)]]]]))
+              data))
+  [[:unknown-form]]))
+
+(defn preprocess-module [ports body]
+  (loop [ports ports output [] input body]
+    (if (empty? input)
+        {:ports ports :body output}
+        (let [current (first input)
+              command (first current)
+              port (if (= :out command) (take 3 current) nil)
+              elem (condp = command
+                     :pipeline nil
+                     :out (vec (conj (drop 3 current) (second current) :assign))
+                     current)
+              elems (if (or port elem) [] (generate-elems current))]
+          (recur (if port (conj ports port) ports)
+                 (if elem (conj output elem) (vec (concat output elems)))
+                 (rest input))))))
+
+(defn postprocess-module [sv-module]
+  (let [maxdecl "`define max(a, b) ((a) < (b)) ? (a) : (b)\n\n"]
+    (str "`default_nettype none"
+         (if (re-find #"`max" sv-module) maxdecl "")
+         sv-module
+         "\n`default_nettype wire")))
+
+(defn build [{:keys [name config ports body] :as input}]
+  (let [{:keys [ports body]} (preprocess-module ports body)]
+    (build-module (assoc input :ports ports :body body))))

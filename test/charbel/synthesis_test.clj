@@ -80,6 +80,15 @@
           expected (slurp "test-resources/counter.sv")]
       (is (= expected result)))))
 
+(deftest alu
+  (testing "Check simplified input-output syntax"
+    (let [input (slurp "test-resources/alu.clj")
+          intermediate-form (module-from-string input)
+          result (build intermediate-form)
+          expected (slurp "test-resources/alu.sv")]
+      (is (= expected result)))))
+
+
 (deftest expression-test
   (testing "Building expressions"
     (is (= (expression 0) {:result 0 :width 1}))
@@ -112,5 +121,6 @@
     (is (= (expression [:width 20 [:vector 0 :a :b]] {:a 10 :b 4}) {:result "(({0, a, b}))" :width 20}))
     (is (= (expression [:vector :a [:width 1 0] :b] {:a 10 :b 4}) {:result "({a, (1'd0), b})" :width 15}))
     (is (= (expression [:+ :a :b] {:a 4 :b :WIDTH}) {:result "(a + b)" :width "`max(4, WIDTH) + 1"}))
-
+    (is (= (expression [:cond [:= 1 0] :a [:= 1 1] :b :else :c] {:a 5 :b 6 :c :W})
+           {:width "`max(5, `max(6, W))" :result "((1 == 0) ? a : ((1 == 1) ? b : (c)))"}))
     ))
