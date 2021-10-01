@@ -17,8 +17,8 @@
 
 (defn build
   "Generate SystemVerilog code based on the output of module function."
-  [input]
-  (s/build input))
+  ([input] (s/build input))
+  ([input postprocess] (if postprocess (s/postprocess-module (build input)) (s/build input))))
 
 (comment
 

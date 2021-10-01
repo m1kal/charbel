@@ -69,7 +69,7 @@
   (testing "Create a parametrized adder"
     (let [input (slurp "test-resources/parametrized_adder.clj")
           intermediate-form (module-from-string input)
-          result (build intermediate-form)
+          result (postprocess-module (build intermediate-form))
           expected (slurp "test-resources/parametrized_adder.sv")]
       (is (= expected result)))))
 (deftest counter

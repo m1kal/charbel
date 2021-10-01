@@ -143,11 +143,11 @@
                  (rest input))))))
 
 (defn postprocess-module [sv-module]
-  (let [maxdecl "`define max(a, b) ((a) < (b)) ? (a) : (b)\n\n"]
-    (str "`default_nettype none"
+  (let [maxdecl "`define max(a, b) ((a) > (b)) ? (a) : (b)\n\n"]
+    (str "`default_nettype none\n\n"
          (if (re-find #"`max" sv-module) maxdecl "")
          sv-module
-         "\n`default_nettype wire")))
+         "\n`default_nettype wire\n")))
 
 (defn build [{:keys [name config ports body] :as input}]
   (let [{:keys [ports body]} (preprocess-module ports body)]

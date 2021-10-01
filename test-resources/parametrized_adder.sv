@@ -1,3 +1,7 @@
+`default_nettype none
+
+`define max(a, b) ((a) > (b)) ? (a) : (b)
+
 module add #(
   parameter WIDTH_A = 32,
   parameter WIDTH_B = 4,
@@ -22,3 +26,5 @@ assign result = tmp;
 
 
 endmodule
+
+`default_nettype wire

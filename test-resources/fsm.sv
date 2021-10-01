@@ -2,11 +2,12 @@ module fsm (
    input wire clk,
    input wire  next,
    input wire [16-1:0] signal,
+   input wire [16-1:0] in,
   output wire [16-1:0] signal_out
 );
 
 logic [4-1:0] state;
-logic [32-1:0] result;
+logic [16-1:0] result;
 logic [26-1:0] accum;
 
 initial state <= 0;
@@ -17,9 +18,9 @@ always @(*)
  if (state == 0)
   result = 0;
  else if (state == 1)
-  result = (accum + input);
+  result = (accum + in);
  else if (state == 2)
-  result = input;
+  result = in;
 
 always @(posedge clk)
  accum <= (result);
