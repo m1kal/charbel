@@ -88,6 +88,13 @@
           expected (slurp "test-resources/alu.sv")]
       (is (= expected result)))))
 
+(deftest two-port-memory
+  (testing "Check a module with two clock domains"
+    (let [input (slurp "test-resources/two_clock_memory.clj")
+          intermediate-form (module-from-string input)
+          result (build intermediate-form)
+          expected (slurp "test-resources/two_clock_memory.sv")]
+      (is (= expected result)))))
 
 (deftest expression-test
   (testing "Building expressions"

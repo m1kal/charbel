@@ -5,6 +5,9 @@
 (defn signal-width [width]
   (if (= width 1) "" (str "[" (from-intermediate width) "-1:0]")))
 
+(defn find-clock [clocks value]
+  (if (number? value) [(nth clocks value [:clk])] (filter #(= (first %) value) clocks)))
+
 (defn build-parameter-list [parameters]
   (str " #(\n  "
        (s/join ",\n  "
@@ -31,7 +34,8 @@
   (s/join ",\n" (map (comp port detect-port) ports)))
 
 (defn declare-signals [clocks ports body]
-  (let [output-forms (map second (filter #(some (fn [x] (= (first %) x)) [:register :assign :cond* :declare]) body))
+  (let [body (map #(if (= :clk (first %)) (last %) %) body)
+        output-forms (map second (filter #(some (fn [x] (= (first %) x)) [:register :assign :cond* :declare]) body))
         port-signals (map second ports)
         undeclared-signals
         (remove (set (concat clocks port-signals)) output-forms)
@@ -44,7 +48,7 @@
 
 (defmulti build-element (fn [element clocks] (first element)))
 
-(defmethod build-element :cond* [element clocks]
+(defmethod build-element :cond* [element _]
   (str
     "always @(*)\n"
     (s/join "\n else"
@@ -55,7 +59,7 @@
     (if (= 1 (mod (count element) 2)) (str "\n else\n " (symbol (second element)) " = " (:result (expression (last element))) ";") "")
     "\n"))
 
-(defmethod build-element :case [element clocks]
+(defmethod build-element :case [element _]
   (str
     "always @(*)\ncase (" (symbol (nth element 2)) ")\n"
     (s/join "\n"
@@ -66,41 +70,43 @@
     (if (= 0 (mod (count element) 2)) (str "\n default: " (symbol (second element)) " = " (:result (expression (last element))) ";") "")
     "\nendcase\n"))
 
-
-(defmethod build-element :register [element clock]
+(defmethod build-element :register [element [[clock reset]]]
   (str
-    (if (or (not (:init (apply expression (drop 2 element)))) (:reset clock)) "" (str "initial " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\n"))
-    "always @(posedge " (symbol (:clk clock)) ")\n"
-    (if (:reset clock)
-      (str "if (" (symbol (:reset clock)) ")\n " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\nelse\n")
+    (if (or (not (:init (apply expression (drop 2 element)))) reset) "" (str "initial " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\n"))
+    "always @(posedge " (symbol clock) ")\n"
+    (if reset
+      (str "if (" (symbol reset) ")\n " (symbol (second element)) " <= " (or (:init (apply expression (drop 2 element))) "'0") ";\nelse\n")
       "")
     " " (symbol (second element)) " <= " (:result (apply expression (drop 2 element))) ";\n"))
 
-(defmethod build-element :assign [element clocks]
+(defmethod build-element :assign [element _]
   (str "assign " (symbol (second element)) " = " (:result (apply expression (drop 2 element))) ";\n"))
 
-(defmethod build-element :array [element clocks]
+(defmethod build-element :array [element _]
   (str "logic " (signal-width (nth element 2)) (signal-width (nth element 3)) " " (symbol (second element)) ";\n"))
 
-(defmethod build-element :set-if [element clock]
-  (str "always @(posedge " (symbol (:clk clock)) ")\n if ("
-       (:result (expression (nth element 1))) ") \n  "
+(defmethod build-element :set-if [element [[clock]]]
+  (str "always @(posedge " (symbol clock) ")\n if ("
+       (:result (expression (nth element 1))) ")\n  "
        (symbol (nth element 2)) "[" (:result (expression (nth element 3)))
        "] <= " (:result (expression (nth element 4))) ";\n"))
 
-(defmethod build-element :instance [element clocks]
+(defmethod build-element :instance [element _]
   (str (symbol (second element)) " " (symbol (nth element 2)) "(\n"
        (s/join ",\n" (map (fn [[k, v]] (str " ." (symbol k) "(" (symbol v) ")")) (nth element 3)))
        "\n);\n\n"))
 
-(defmethod build-element :declare [element clocks]
+(defmethod build-element :clk [element clocks]
+  (build-element (last element) (find-clock clocks (second element))))
+
+(defmethod build-element :declare [element _]
   "")
 
-(defmethod build-element :default [element clocks]
+(defmethod build-element :default [element _]
   (str "unknown " (str element)))
 
 (defn build-body [body clocks]
-  (s/join "\n" (map #(build-element % (zipmap [:clk :reset] (first clocks))) body)))
+  (s/join "\n" (map #(build-element % clocks) body)))
 
 (defn build-module
   [{:keys [name config ports body]}]
