@@ -5,7 +5,7 @@
                (= cmd 2) (* a b)
                (= cmd 3) (mod a b)
                (bit-or a b))
-        (register result_d (cond (= en 0) result_d (= 1 (select cmd 3)) (+ result_d result_d0) :else result_d0))
+        (register result_d (width (inc WIDTH) (cond (= en 0) result_d (= 1 (select cmd 3)) (+ result_d result_d0) :else result_d0)))
         (register result_dd (if (= 1 (select en_d 0) ) result_d result_dd))
         (pipeline [en] 2)
         (out result WIDTH result_dd)

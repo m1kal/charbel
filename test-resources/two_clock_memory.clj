@@ -1,4 +1,4 @@
-(module two-port-memory {:clocks [[clk1] [clk2]]}
+(module two_port_memory {:clocks [[clk1] [clk2]]}
         [[wraddr 32] [din 32] [we 1] [rdaddr 32]]
         (register wraddr_d wraddr)
         (register din_d din)

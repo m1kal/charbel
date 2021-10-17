@@ -11,8 +11,8 @@ module alu #(
   output wire  ready
 );
 
-logic [32-1:0] result_d0;
-logic [33-1:0] result_d;
+logic [WIDTH-1:0] result_d0;
+logic [(WIDTH + 1)-1:0] result_d;
 logic [32-1:0] result_dd;
 logic [2-1:0][$bits(en)-1:0] en_d;
 logic [$bits(en)-1:0] en_d2;
@@ -33,7 +33,7 @@ always @(posedge clk)
 if (reset)
  result_d <= '0;
 else
- result_d <= ((en == 0) ? result_d : ((1 == (cmd[3])) ? (result_d + result_d0) : (result_d0)));
+ result_d <= (((en == 0) ? result_d : ((1 == (cmd[3])) ? (result_d + result_d0) : (result_d0))));
 
 always @(posedge clk)
 if (reset)

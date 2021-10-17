@@ -23,6 +23,7 @@
 
 (defn detect-port [input]
   (condp = (count input)
+    1 [:in (first input) 1]
     2 (cons :in input)
     3 input
     [:in :invalid_port -1]))
@@ -34,7 +35,8 @@
   (s/join ",\n" (map (comp port detect-port) ports)))
 
 (defn declare-signals [clocks ports body]
-  (let [body (map #(if (= :clk (first %)) (last %) %) body)
+  (let [ports (mapv detect-port ports)
+        body (map #(if (= :clk (first %)) (last %) %) body)
         output-forms (map second (filter #(some (fn [x] (= (first %) x)) [:register :assign :cond* :declare]) body))
         port-signals (map second ports)
         undeclared-signals

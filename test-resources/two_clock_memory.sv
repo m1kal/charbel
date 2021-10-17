@@ -1,4 +1,4 @@
-module two-port-memory (
+module two_port_memory (
    input wire clk1,
    input wire clk2,
    input wire [32-1:0] wraddr,
@@ -10,7 +10,7 @@ module two-port-memory (
 
 logic [32-1:0] wraddr_d;
 logic [32-1:0] din_d;
-logic [32-1:0] we_d;
+logic  we_d;
 logic [32-1:0] rdaddr_d;
 logic [32-1:0] q_internal;
 

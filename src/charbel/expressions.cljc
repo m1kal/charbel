@@ -5,9 +5,10 @@
   (if (keyword? value) (symbol value) (if (or (string? value) (number? value)) value "-unknown-type-")))
 
 (defn max-width [args]
-  (if (every? number? args)
-    (apply max args)
-    (reduce (fn [acc elem] (str "`max(" acc ", " elem ")"))
+  (cond
+    (apply = args) (first args)
+    (every? number? args) (apply max args)
+    :else (reduce (fn [acc elem] (str "`max(" acc ", " elem ")"))
             (map (comp str from-intermediate) args))))
 
 (defn width-sum [args]
