@@ -105,7 +105,8 @@
   "")
 
 (defmethod build-element :default [element _]
-  (str "unknown " (str element)))
+  (if (string? element) element
+  (str "// unknown element:" (str element))))
 
 (defn build-body [body clocks]
   (s/join "\n" (map #(build-element % clocks) body)))

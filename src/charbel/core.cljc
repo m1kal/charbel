@@ -12,12 +12,16 @@
 (defn module-from-string
   "Create intermediate representation from input string. See README for syntax and examples."
   [input]
-  (let [[command & args] (read-string input)]
-    (if (= 'module command) (apply a/module* args) "Error: not a module")))
+  (try
+    (let [[command & args] (read-string input)]
+      (if (= 'module command) (apply a/module* args) "Error: not a module"))
+    (catch Exception e "//Invalid input")))
 
 (defn build
   "Generate SystemVerilog code based on the output of module function."
-  ([input] (s/build input))
+  ([input] (try
+               (s/build input)
+               (catch Exception e "//Something went wrong")))
   ([input postprocess] (if postprocess (s/postprocess-module (build input)) (s/build input))))
 
 (comment
