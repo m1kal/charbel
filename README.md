@@ -3,6 +3,16 @@
 Write synthesizable FPGA code with Clojure syntax.
 SystemVerilog code is generated.
 
+The goal of the project is to write Verilog modules with less code. With fewer lines of code a larger part of a module fits on the screen. Clojure syntax seems a perfect solution.
+
+## Online version (using ClojureScript)
+
+To use Charbel in the browser (without the need to install and learn Clojure), use
+
+[https://m1kal.github.io/charbel/](https://m1kal.github.io/charbel/)
+
+This site works on the client side - your code is not sent anywhere.
+
 ## Usage
 
 Add dependency in project.clj:
@@ -29,22 +39,100 @@ Or use input string:
                  [[:in a 4] [:in b 4] [:out c 4]]
                  (assign c (+ a b)))"))
 
-Create Verilog code:
+Create SystemVerilog code:
 
     (build adder-module)
 
-Functions to create and assign signals:
-* register name expression
-* assign name expression
+## Usage
 
-Supported expressions:
-(+ a b), (* a b), (if a b c), (select a position),
-(inc a), (dec a), (bit-and a b), (bit-xor a b),
-(bit-or a b), (= a b), (width w a), (mod a b)
+### Define a module
 
-Clocks and resets can be declared explicitly as the first
-argument to `module`. If the argument is not provided,
-clock is called "clk", synchronous reset is called "reset".
+    (module <name> [configuration] <ports> <body>)
+
+* configuration is an optional map containing parameters and clocks
+  * :clocks [[\<clock1\> \<reset1\>] [\<clock2\> \<reset2\>] ...]
+  * :parameters [\<name1\> \<value1\> \<name2\> \<value2\> ...]
+* ports is a vector of vectors, each containing
+  * optional direction: :in or :out
+  * name
+  * width
+* body is a list of statements
+  * (register \<name\> \<expression\>)
+  * (assign \<name\> \<expression\>)
+  * (out \<name\> \<width\> \<expression\>)
+  * (cond* \<name\> \<condition1\> \<expression1\> \<condition2\> \<expression2\> ...)
+  * (case \<name\> \<selector\> \<value1\> \<expression1\> \<value2\> \<expression2\> ...)
+  * (instance \<module\> \<name\> ([\<port\> \<connection\>] ...))
+  * (declare \<name\> \<width\>)
+
+### Supported expressions
+
+    (+ <a> <b> ...)
+    (- <a> <b> ...)
+    (* <a> <b> ...)
+    (if <condition> <value-if-true> <value-if-false>)
+    (cond <condition1> <expression1> <condition2> <expression2> ...)
+    (select <signal> <msb> [<lsb>])
+    (vector <a> <b> ...)
+    (inc <a>)
+    (dec <a>)
+    (bit-and <a> <b> ...)
+    (bit-or <a> <b> ...)
+    (bit-xor <a> <b> ...)
+    (bit-not <a>)
+    (mod <a> <b>)
+    (width <width> <expression>)
+    (= <a> <b> ...)
+    (init <initial-value> <expression>)
+    (get <memory> <address>)
+
+`width` and `init` do not modify the expression.
+
+### Handling memories
+
+Memory needs to be declared:
+
+    (array <name> <word-size> <width>)
+
+Write to an address:
+
+    (set-if <condition> <memory-name> <address> <data>)
+
+Read from a memory - use the expression:
+
+    (get <memory> <address>)
+
+### Clocks
+
+If clocks are not provided in configuration, the default clock is called "clk", synchronous reset is called "reset".
+
+If more than one clock is present in a module, the registers use the first clock by default. To change it, each `register` statement using non-default clock needs to be wrapped in `clk`:
+
+    (clk <clock-name> (register <name> <expression>))
+
+Each clock can have an associated synchronous reset signal.
+
+### Additional information
+
+Output ports don't need to be declared in ports section. It is enough to use `out` statement in the body.
+
+`let` binding should work and should result in asynchronous signal.
+
+Width calculation does not always work correctly: when using internal signals of width larger than 32 bits, some statements might need to be wrapped in `width`.
+
+Unsigned 64-bit numbers can be used in the code. If wider "magic numbers" are required, use literals or concatenate values using `vector`.
+
+SystemVerilog statements can be inserted in the body as strings.
+
+If reset signal is used, all signals are reset to 0, unless `init` is provided. If reset signal is not used, `initial` block is generated to set each register to initial value (0 or value provided by `init`).
+
+### Building SystemVerilog code
+
+    (build <module>)
+    ;or
+    (build <module> :postprocess)
+
+The latter form adds *\`default_nettype none*, and *\`max* macro if it is needed.
 
 ## Examples
 
@@ -123,7 +211,7 @@ If you want to contribute, request features, discuss or comment the project, sen
 
 So far this has been one-person project. If you have an idea to improve the project, feel free to fork it.
 
-However, pull requests might be rejected. If you have an improvement idea and want your changes to be merged, please contact me first (or create an issue).
+However, pull requests might be rejected. If you have an improvement idea and want your changes to be merged, please contact me first (or create a Github issue).
 
 ## License
 
