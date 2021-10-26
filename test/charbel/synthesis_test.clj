@@ -40,61 +40,39 @@
                         "\n\n\n\n\n\nendmodule\n")]
       (is (= result expected)))))
 
+(defn compare [filename postprocess]
+    (let [input (slurp (str "test-resources/" filename ".clj"))
+          result (build (module-from-string input))
+          expected (clojure.string/replace (slurp (str "test-resources/" filename ".sv")) #"\r" "")]
+      (is (= expected (if postprocess (postprocess-module result) result)))))
 
 (deftest add-multiply
   (testing "Create a simple module"
-    (let [input (slurp "test-resources/add_multiply.clj")
-          intermediate-form (module-from-string input)
-          result (build intermediate-form)
-          expected (slurp "test-resources/add_multiply.sv")]
-      (is (= expected result)))))
+    (compare "add_multiply" false)))
 
 (deftest edge-detector
   (testing "Create an edge detector"
-    (let [input (slurp "test-resources/edge_detector.clj")
-          intermediate-form (module-from-string input)
-          result (build intermediate-form)
-          expected (slurp "test-resources/edge_detector.sv")]
-      (is (= expected result)))))
+    (compare "edge_detector" false)))
 
 (deftest fsm
   (testing "Create a state machine"
-    (let [input (slurp "test-resources/fsm.clj")
-          intermediate-form (module-from-string input)
-          result (build intermediate-form)
-          expected (slurp "test-resources/fsm.sv")]
-      (is (= expected result)))))
+    (compare "fsm" false)))
 
 (deftest parametrized-adder
   (testing "Create a parametrized adder"
-    (let [input (slurp "test-resources/parametrized_adder.clj")
-          intermediate-form (module-from-string input)
-          result (postprocess-module (build intermediate-form))
-          expected (slurp "test-resources/parametrized_adder.sv")]
-      (is (= expected result)))))
+    (compare "parametrized_adder" true)))
+
 (deftest counter
   (testing "Create a parametrized counter"
-    (let [input (slurp "test-resources/counter.clj")
-          intermediate-form (module-from-string input)
-          result (build intermediate-form)
-          expected (slurp "test-resources/counter.sv")]
-      (is (= expected result)))))
+    (compare "counter" false)))
 
 (deftest alu
   (testing "Check simplified input-output syntax"
-    (let [input (slurp "test-resources/alu.clj")
-          intermediate-form (module-from-string input)
-          result (build intermediate-form)
-          expected (slurp "test-resources/alu.sv")]
-      (is (= expected result)))))
+    (compare "alu" false)))
 
 (deftest two-port-memory
   (testing "Check a module with two clock domains"
-    (let [input (slurp "test-resources/two_clock_memory.clj")
-          intermediate-form (module-from-string input)
-          result (build intermediate-form)
-          expected (slurp "test-resources/two_clock_memory.sv")]
-      (is (= expected result)))))
+    (compare "two_clock_memory" false)))
 
 (deftest expression-test
   (testing "Building expressions"

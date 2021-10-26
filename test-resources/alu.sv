@@ -3,7 +3,7 @@ module alu #(
  )  (
    input wire clk,
    input wire reset,
-   input wire [3-1:0] cmd,
+   input wire [4-1:0] cmd,
    input wire [WIDTH-1:0] a,
    input wire [WIDTH-1:0] b,
    input wire  en,

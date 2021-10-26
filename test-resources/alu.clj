@@ -1,4 +1,4 @@
-(module alu {:parameters [WIDTH 16]} [[cmd 3] [a WIDTH] [b WIDTH] [en 1]]
+(module alu {:parameters [WIDTH 16]} [[cmd 4] [a WIDTH] [b WIDTH] [en 1]]
         (cond* result_d0
                (= cmd 0) (+ a b)
                (= cmd 1) (- a b)
