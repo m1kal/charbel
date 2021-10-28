@@ -64,6 +64,7 @@ Create SystemVerilog code:
   * (case \<name\> \<selector\> \<value1\> \<expression1\> \<value2\> \<expression2\> ...)
   * (instance \<module\> \<name\> ([\<port\> \<connection\>] ...))
   * (declare \<name\> \<width\>)
+  * (generate [\<genvar\> \<start\> \<stop\>] expressions)
 
 ### Supported expressions
 
@@ -154,18 +155,18 @@ results in the following SystemVerilog code:
         input wire[32-1:0] address,
        output wire[32-1:0] dataout
     );
-    
+
     logic [128-1:0] q;
-    
+
     logic [32-1:0][32-1:0] mem;
-    
+
     always @(posedge clk)
      if ((we == 1))
       mem[address] <= datain;
-    
+
     always @(posedge clk)
      q <= (mem[address]);
-    
+
     assign dataout = q;
 
     endmodule
@@ -222,4 +223,4 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- 
+

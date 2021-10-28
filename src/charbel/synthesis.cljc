@@ -104,6 +104,13 @@
 (defmethod build-element :declare [element _]
   "")
 
+(defmethod build-element :generate [element clocks]
+  (let [[iter val1 val2] (second element)
+        iter (from-intermediate iter)]
+  (str "genvar " iter ";\ngenerate\nfor("iter"="val1";"iter"<"val2";"iter"+=1) begin\n"
+       (clojure.string/join "\n" (mapv #(build-element % clocks) (drop 2 element)))
+       "\nend\nendgenerate\n")))
+
 (defmethod build-element :default [element _]
   (if (string? element) element
   (str "// unknown element:" (str element))))

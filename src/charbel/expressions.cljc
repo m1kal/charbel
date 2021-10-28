@@ -110,6 +110,7 @@
    (cond
      (number? form) {:result form :width (inc (int (Math/floor (/ (Math/log (max form 1)) (Math/log 2)))))}
      (keyword? form) {:result (str (from-intermediate form)) :width (or (env form) 32)}
+     (string? form) {:result form :width 32}
      (or (vector? form) (seq? form))
      (let [e (complex-expression form env)]
        (assoc e :result (str "(" (:result e) ")")))
