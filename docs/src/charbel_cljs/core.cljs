@@ -15,12 +15,14 @@
 
 (defn main []
   [:div {:style {:background-color "rgb(200,240,200)" :width 1280 :padding-left 20 :padding-top 1 :padding-bottom 20}}
-   [:h1 "Charbel example"]
-   [:div "Write your code below"]
+   [:h1 "Charbel online"]
+   [:div "Write synthesizable FPGA code using Clojure syntax. The code is translated to SystemVerilog."]
+   [:div "Project source code:" [:a {:href "https://github.com/m1kal/charbel"} "https://github.com/m1kal/charbel"] "."]
+   [:h4 "Write your code below"]
     [:table
       [:tbody
         [:tr
-           [:td 
+           [:td {:style {:vertical-align "top"}}
              [:textarea
                {:id "i" :style {:width 600 :height 400} :value @input-form
                 :on-change #(reset! input-form (.-value (.-target %)))}]]
@@ -34,7 +36,7 @@
               {:id "run" :on-click #(reset! output-form (build (module-from-string @input-form)))}
               "Convert"]]
           [:td ""]]]]])
-   
+
 (defn mount-root []
   (d/render [main] (.getElementById js/document "main")))
 
