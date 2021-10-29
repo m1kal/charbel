@@ -1,4 +1,4 @@
-(defproject com.github.m1kal/charbel "0.1.7"
+(defproject com.github.m1kal/charbel "0.1.8"
   :description "Write synthesizable FPGA code with Clojure syntax. The code is translated to SystemVerilog."
   :url "http://github.com/m1kal/charbel"
   :license {:name "MIT"
