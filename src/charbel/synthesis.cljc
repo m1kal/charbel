@@ -22,21 +22,25 @@
          (mapcat #(->> % (take 2) (filter identity)) clocks))))
 
 (defn detect-port [input]
-  (condp = (count input)
-    1 [:in (first input) 1]
-    2 (cons :in input)
-    3 input
-    [:in :invalid_port -1]))
+  (if (keyword? input) input
+    (condp = (count input)
+      1 [:in (first input) 1]
+      2 (cons :in input)
+      3 input
+      [:in :invalid_port -1])))
 
-(defn port [[dir name width]]
-  (str "  " (if (= dir :in) " input" "output") " wire " (signal-width width) " " (symbol name)))
+(defn port [input]
+  (if (keyword? input)
+    (str " " (from-intermediate input))
+    (let [[dir name width] input]
+      (str "  " (if (= dir :in) " input" "output") " wire " (signal-width width) " " (symbol name)))))
 
 (defn build-ports [ports]
   (s/join ",\n" (map (comp port detect-port) ports)))
 
 (defn declare-signals [clocks ports body]
-  (let [ports (mapv detect-port ports)
-        body (map #(if (= :clk (first %)) (last %) %) body)
+  (let [ports (filter coll? (mapv detect-port ports))
+        body (map #(if (= :clk (first %)) (last %) %) (filter coll? body))
         output-forms (map second (filter #(some (fn [x] (= (first %) x)) [:register :assign :cond* :declare]) body))
         port-signals (map second ports)
         undeclared-signals
@@ -46,7 +50,7 @@
         widths (map #(:width (expression (if (= (first %) :declare) (dec (bit-shift-left 1 (last %))) (last %)) env)) forms-to-evaluate)
         signal-widths (zipmap undeclared-signals widths)]
     (s/join "\n"
-                         (map #(str "logic " (signal-width (last %)) " " (symbol (first %)) ";") signal-widths))))
+            (map #(str "logic " (signal-width (last %)) " " (symbol (first %)) ";") signal-widths))))
 
 (defmulti build-element (fn [element clocks] (first element)))
 
@@ -113,10 +117,10 @@
 
 (defmethod build-element :default [element _]
   (if (string? element) element
-  (str "// unknown element:" (str element))))
+    (str "// unknown element:  " (str element))))
 
 (defn build-body [body clocks]
-  (s/join "\n" (map #(build-element % clocks) body)))
+  (s/join "\n" (map #(if (coll? %) (build-element % clocks) (str (from-intermediate %))) body)))
 
 (defn build-module
   [{:keys [name config ports body]}]
@@ -147,7 +151,7 @@
     (if (empty? input)
         {:ports ports :body output}
         (let [current (first input)
-              command (first current)
+              command (if (coll? current) (first current) :nop)
               port (if (= :out command) (take 3 current) nil)
               elem (condp = command
                      :pipeline nil

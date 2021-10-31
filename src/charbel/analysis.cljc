@@ -20,7 +20,11 @@
   (vec (parse* form)))
 
 (defn postprocess [forms]
-  (reduce (fn [acc elem] (if (= (first elem) :do) (vec (concat acc (rest elem))) (conj acc elem))) [] forms))
+  (reduce
+    (fn [acc elem]
+      (if (and (coll? elem) (= (first elem) :do)) (vec (concat acc (rest elem))) (conj acc elem)))
+    []
+    forms))
 
 (defn module* [name & args]
   (let [[config ports body] (if (map? (first args))
