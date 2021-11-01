@@ -12,6 +12,7 @@
 
 (defonce input-form (r/atom example))
 (def output-form (r/atom "<empty>"))
+(def postprocess (r/atom true))
 
 (defn main []
   [:div {:style {:background-color "rgb(200,240,200)" :width 1280 :padding-left 20 :padding-top 1 :padding-bottom 20}}
@@ -32,9 +33,13 @@
             [:pre @output-form]]]
         [:tr
           [:td
-            [:button
-              {:id "run" :on-click #(reset! output-form (build (module-from-string @input-form)))}
+            [:div
+             [:button
+              {:id "run" :on-click #(reset! output-form (build (module-from-string @input-form) @postprocess))}
               "Convert"]]
+           [:div
+           [:input {:type "checkbox" :checked @postprocess :on-click #(swap! postprocess not)}]
+           "Generate `default_nettype and `max (if necessary)."]]
           [:td ""]]]]])
 
 (defn mount-root []
