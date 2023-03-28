@@ -2,6 +2,7 @@
   #?(:cljs (:require-macros [charbel.core]))
   (:require [charbel.analysis :as a]
             [charbel.synthesis :as s]
+            [charbel.vhdl-synthesis :as vhdl-s]
             #?(:cljs [cljs.reader :refer [read-string]])))
 
 (defmacro module
@@ -23,6 +24,14 @@
                (s/build input)
                (catch #?(:clj Exception :cljs js/Error) _ "//Something went wrong")))
   ([input postprocess] (if postprocess (s/postprocess-module (build input)) (s/build input))))
+
+(defn build-vhdl
+  "Generate VHDL code based on the output of module function."
+  ([input] (try
+             (vhdl-s/build input)
+             (catch #?(:clj Exception :cljs js/Error) _ "--Something went wrong")))
+  ([input postprocess] (if postprocess (vhdl-s/postprocess-module (build-vhdl input)) (vhdl-s/build input))))
+
 
 (comment
 

@@ -3,6 +3,8 @@
 Write synthesizable FPGA code with Clojure syntax.
 SystemVerilog code is generated.
 
+(Experimental partial support of VHDL code generation has been added. Use `build-vhdl` instead of `build` to generate VHDL.)
+
 The goal of the project is to write Verilog modules with less code. With fewer lines of code a larger part of a module fits on the screen. Clojure syntax seems a perfect solution.
 
 ## Online version (using ClojureScript)
@@ -216,7 +218,7 @@ However, pull requests might be rejected. If you have an improvement idea and wa
 
 ## License
 
-Copyright (c) 2021 Michał Kahl
+Copyright (c) 2021-2023 Michał Kahl
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

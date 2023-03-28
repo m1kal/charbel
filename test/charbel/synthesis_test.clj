@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [charbel.core :refer [module module-from-string]]
             [charbel.analysis :refer :all]
-            [charbel.expressions :refer :all]
+            [charbel.verilog-expressions :refer :all]
             [charbel.synthesis :refer :all]))
 
 (deftest empty-module

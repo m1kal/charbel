@@ -1,4 +1,4 @@
-(ns charbel.expressions
+(ns charbel.verilog-expressions
   (:require [clojure.string :as s]))
 
 (defn from-intermediate [value]
